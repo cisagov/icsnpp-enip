@@ -20,7 +20,7 @@
             data_segment = "";
             other_path = "";
         }
-        
+
     }CIP_Request_Path;
 
     uint32 get_number(uint8 size, uint8 x, const_bytestring data);
@@ -39,7 +39,7 @@
             return (data[x] << 8) | data[x+1];
         else if (size == 2)
             return (data[x] << 24) | (data[x+1] << 13) | (data[x+2] << 8) | data[x+3];
-        
+
         return UINT32_MAX;
     }
 
@@ -58,10 +58,10 @@
                     request_path.other_path += "Port Segment: ";
                     uint8 header = data[x];
                     if((header & 0xf) == 15){ // Check for Extended Port Identifier
-                        request_path.other_path += fmt("Port Number = 0x%02x%02x ",data[x+2],data[x+1]);
+                        request_path.other_path += zeek::util::fmt("Port Number = 0x%02x%02x ",data[x+2],data[x+1]);
                         x += 3;
                     }else{
-                        request_path.other_path += fmt("Port Number = %d ",data[x] & 0xf);
+                        request_path.other_path += zeek::util::fmt("Port Number = %d ",data[x] & 0xf);
                         x += 2;
                     }
                     if (((header >> 4) & 1) == 1){
@@ -72,7 +72,7 @@
                             request_path.other_path += data[i];
                         x += size + 1;
                     }else{
-                        request_path.other_path += fmt("Link Address = %d",data[x]);
+                        request_path.other_path += zeek::util::fmt("Link Address = %d",data[x]);
                         x += 1;
                     }
                     request_path.other_path += "; ";
@@ -91,16 +91,16 @@
                     else if(choice == 4)
                         request_path.attribute_id = get_number(size, x, data);
                     else
-                        request_path.other_path += fmt("0x%x",get_number(size, x, data));
-                    
+                        request_path.other_path += zeek::util::fmt("0x%x",get_number(size, x, data));
+
                     if(size == 0)
                         x += 1;
                     else if(size ==1)
                         x += 2;
                     else
                         x += 4;
-                    
-                    
+
+
                     break;
                 }
                 case 2: // Network Segment
@@ -111,7 +111,7 @@
                     string network_choices[3] = {"Schedule","Fixed Tag","Production Inhibit Time"};
                     if(((header & 0x10) >> 4) == 0){
                         request_path.other_path += network_choices[(header & 0x7)] + "(";
-                        request_path.other_path += fmt("0x%02x); ",data[x]);
+                        request_path.other_path += zeek::util::fmt("0x%02x); ",data[x]);
                         x += 1;
                     }else{
                         uint8 size = data[x]*2;
@@ -157,7 +157,7 @@
                 {
                     request_path.other_path += "Unknown Segment: ";
                     for ( uint8 i = 0; i < data.length(); ++i )
-                        request_path.other_path += fmt("%x",data[i]);
+                        request_path.other_path += zeek::util::fmt("%x",data[i]);
                     return request_path;
                 }
             }
@@ -169,7 +169,7 @@
 %}
 
 refine flow ENIP_Flow += {
-    
+
     ###############################################################################################
     ############################  Process data for enip_header event  #############################
     ###############################################################################################
@@ -177,14 +177,14 @@ refine flow ENIP_Flow += {
         %{
             if ( ::enip_header )
             {
-                BifEvent::generate_enip_header(connection()->bro_analyzer(),
-                                              connection()->bro_analyzer()->Conn(),
-                                              ${enip_header.command},
-                                              ${enip_header.length},
-                                              ${enip_header.session_handle},
-                                              ${enip_header.status},
-                                              bytestring_to_val(${enip_header.sender_context}),
-                                              ${enip_header.options});
+                zeek::BifEvent::enqueue_enip_header(connection()->zeek_analyzer(),
+                                                    connection()->zeek_analyzer()->Conn(),
+                                                    ${enip_header.command},
+                                                    ${enip_header.length},
+                                                    ${enip_header.session_handle},
+                                                    ${enip_header.status},
+                                                    to_stringval(${enip_header.sender_context}),
+                                                    ${enip_header.options});
             }
             return true;
         %}
@@ -197,21 +197,21 @@ refine flow ENIP_Flow += {
             if ( ::cip_header )
             {
                 CIP_Request_Path request_path;
-                
+
                 if(${cip_header.request_or_response} != 1)
                     request_path = test_parse(${cip_header.request_path.request_path});
-                
-                BifEvent::generate_cip_header(connection()->bro_analyzer(),
-                                             connection()->bro_analyzer()->Conn(),
-                                             ${cip_header.cip_sequence_count},
-                                             ${cip_header.service_code},
-                                             (${cip_header.request_or_response} == 1),
-                                             ${cip_header.status},
-                                             request_path.class_id,
-                                             request_path.instance_id,
-                                             request_path.attribute_id,
-                                             new StringVal(request_path.data_segment),
-                                             new StringVal(request_path.other_path));
+
+                zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
+                                                   connection()->zeek_analyzer()->Conn(),
+                                                   ${cip_header.cip_sequence_count},
+                                                   ${cip_header.service_code},
+                                                   (${cip_header.request_or_response} == 1),
+                                                   ${cip_header.status},
+                                                   request_path.class_id,
+                                                   request_path.instance_id,
+                                                   request_path.attribute_id,
+                                                   zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
+                                                   zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
             }
             return true;
         %}
@@ -223,12 +223,12 @@ refine flow ENIP_Flow += {
         %{
             if ( ::cip_io )
             {
-                BifEvent::generate_cip_io(connection()->bro_analyzer(),
-                                          connection()->bro_analyzer()->Conn(),
-                                          ${cip_io_item.sequenced_address_item.connection_identifier},
-                                          ${cip_io_item.sequenced_address_item.encap_sequence_number},
-                                          ${cip_io_item.connected_data_length},
-                                          bytestring_to_val(${cip_io_item.connected_data_item}));
+                zeek::BifEvent::enqueue_cip_io(connection()->zeek_analyzer(),
+                                               connection()->zeek_analyzer()->Conn(),
+                                               ${cip_io_item.sequenced_address_item.connection_identifier},
+                                               ${cip_io_item.sequenced_address_item.encap_sequence_number},
+                                               ${cip_io_item.connected_data_length},
+                                               to_stringval(${cip_io_item.connected_data_item}));
             }
             return true;
         %}
@@ -240,20 +240,20 @@ refine flow ENIP_Flow += {
         %{
             if ( ::cip_identity )
             {
-                BifEvent::generate_cip_identity(connection()->bro_analyzer(),
-                                               connection()->bro_analyzer()->Conn(),
-                                               ${identity_item.encapsulation_version},
-                                               ${identity_item.socket_address.sin_addr},
-                                               ${identity_item.socket_address.sin_port},
-                                               ${identity_item.vendor_id},
-                                               ${identity_item.device_type},
-                                               ${identity_item.product_code},
-                                               ${identity_item.revision_major},
-                                               ${identity_item.revision_minor},
-                                               ${identity_item.status},
-                                               ${identity_item.serial_number},
-                                               bytestring_to_val(${identity_item.product_name}),
-                                               ${identity_item.state});
+                zeek::BifEvent::enqueue_cip_identity(connection()->zeek_analyzer(),
+                                                    connection()->zeek_analyzer()->Conn(),
+                                                    ${identity_item.encapsulation_version},
+                                                    ${identity_item.socket_address.sin_addr},
+                                                    ${identity_item.socket_address.sin_port},
+                                                    ${identity_item.vendor_id},
+                                                    ${identity_item.device_type},
+                                                    ${identity_item.product_code},
+                                                    ${identity_item.revision_major},
+                                                    ${identity_item.revision_minor},
+                                                    ${identity_item.status},
+                                                    ${identity_item.serial_number},
+                                                    to_stringval(${identity_item.product_name}),
+                                                    ${identity_item.state});
             }
             return true;
         %}
@@ -265,10 +265,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::register_session )
             {
-                BifEvent::generate_register_session(connection()->bro_analyzer(),
-                                                   connection()->bro_analyzer()->Conn(),
-                                                   ${message.protocol_version},
-                                                   ${message.options_flags});
+                zeek::BifEvent::enqueue_register_session(connection()->zeek_analyzer(),
+                                                         connection()->zeek_analyzer()->Conn(),
+                                                         ${message.protocol_version},
+                                                         ${message.options_flags});
             }
             return true;
         %}
@@ -279,13 +279,13 @@ refine flow ENIP_Flow += {
     function process_cip_security_item(security_item: CIP_Security_Item): bool
         %{
             if ( ::cip_security )
-            {            
-                BifEvent::generate_cip_security(connection()->bro_analyzer(),
-                                               connection()->bro_analyzer()->Conn(),
-                                               ${security_item.security_profile},
-                                               ${security_item.cip_security_state},
-                                               ${security_item.enip_security_state},
-                                               ${security_item.iana_port_state});
+            {
+                zeek::BifEvent::enqueue_cip_security(connection()->zeek_analyzer(),
+                                                     connection()->zeek_analyzer()->Conn(),
+                                                     ${security_item.security_profile},
+                                                     ${security_item.cip_security_state},
+                                                     ${security_item.enip_security_state},
+                                                     ${security_item.iana_port_state});
             }
             return true;
         %}
@@ -297,9 +297,9 @@ refine flow ENIP_Flow += {
         %{
             if ( ::enip_capability )
             {
-                BifEvent::generate_enip_capability(connection()->bro_analyzer(),
-                                                  connection()->bro_analyzer()->Conn(),
-                                                  ${enip_item.enip_profile});
+                zeek::BifEvent::enqueue_enip_capability(connection()->zeek_analyzer(),
+                                                        connection()->zeek_analyzer()->Conn(),
+                                                        ${enip_item.enip_profile});
             }
             return true;
         %}
@@ -311,11 +311,11 @@ refine flow ENIP_Flow += {
         %{
             if ( ::enip_service )
             {
-                BifEvent::generate_enip_service(connection()->bro_analyzer(),
-                                          connection()->bro_analyzer()->Conn(),
-                                          ${service_item.protocol_version},
-                                          ${service_item.capability_flags},
-                                          bytestring_to_val(${service_item.service_name}));
+                zeek::BifEvent::enqueue_enip_service(connection()->zeek_analyzer(),
+                                                     connection()->zeek_analyzer()->Conn(),
+                                                     ${service_item.protocol_version},
+                                                     ${service_item.capability_flags},
+                                                     to_stringval(${service_item.service_name}));
             }
             return true;
         %}
@@ -327,9 +327,9 @@ refine flow ENIP_Flow += {
         %{
             if ( ::connected_address )
             {
-                BifEvent::generate_connected_address(connection()->bro_analyzer(),
-                                                    connection()->bro_analyzer()->Conn(),
-                                                    ${address_item.connection_identifier});
+                zeek::BifEvent::enqueue_connected_address(connection()->zeek_analyzer(),
+                                                          connection()->zeek_analyzer()->Conn(),
+                                                          ${address_item.connection_identifier});
             }
             return true;
         %}
@@ -341,10 +341,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::sequenced_address )
             {
-                BifEvent::generate_sequenced_address(connection()->bro_analyzer(),
-                                                    connection()->bro_analyzer()->Conn(),
-                                                    ${address_item.connection_identifier},
-                                                    ${address_item.encap_sequence_number});
+                zeek::BifEvent::enqueue_sequenced_address(connection()->zeek_analyzer(),
+                                                          connection()->zeek_analyzer()->Conn(),
+                                                          ${address_item.connection_identifier},
+                                                          ${address_item.encap_sequence_number});
             }
             return true;
         %}
@@ -356,11 +356,11 @@ refine flow ENIP_Flow += {
         %{
             if ( ::unconnected_message_dtls )
             {
-                BifEvent::generate_unconnected_message_dtls(connection()->bro_analyzer(),
-                                                           connection()->bro_analyzer()->Conn(),
-                                                           ${message.unconn_message_type},
-                                                           ${message.transaction_number},
-                                                           ${message.status});
+                zeek::BifEvent::enqueue_unconnected_message_dtls(connection()->zeek_analyzer(),
+                                                                 connection()->zeek_analyzer()->Conn(),
+                                                                 ${message.unconn_message_type},
+                                                                 ${message.transaction_number},
+                                                                 ${message.status});
             }
             return true;
         %}
@@ -372,10 +372,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::socket_address_info )
             {
-                BifEvent::generate_socket_address_info(connection()->bro_analyzer(),
-                                             connection()->bro_analyzer()->Conn(),
-                                             ${item.sin_addr},
-                                             ${item.sin_port});
+                zeek::BifEvent::enqueue_socket_address_info(connection()->zeek_analyzer(),
+                                                            connection()->zeek_analyzer()->Conn(),
+                                                            ${item.sin_addr},
+                                                            ${item.sin_port});
             }
             return true;
         %}
@@ -387,9 +387,9 @@ refine flow ENIP_Flow += {
         %{
             if ( ::get_attribute_all_response )
             {
-                BifEvent::generate_get_attribute_all_response(connection()->bro_analyzer(),
-                                                             connection()->bro_analyzer()->Conn(),
-                                                             bytestring_to_val(${data.attribute_data}));
+                zeek::BifEvent::enqueue_get_attribute_all_response(connection()->zeek_analyzer(),
+                                                                   connection()->zeek_analyzer()->Conn(),
+                                                                   to_stringval(${data.attribute_data}));
             }
             return true;
         %}
@@ -401,9 +401,9 @@ refine flow ENIP_Flow += {
         %{
             if ( ::set_attribute_all_request )
             {
-                BifEvent::generate_set_attribute_all_request(connection()->bro_analyzer(),
-                                                            connection()->bro_analyzer()->Conn(),
-                                                            bytestring_to_val(${data.attribute_data}));
+                zeek::BifEvent::enqueue_set_attribute_all_request(connection()->zeek_analyzer(),
+                                                                  connection()->zeek_analyzer()->Conn(),
+                                                                  to_stringval(${data.attribute_data}));
             }
             return true;
         %}
@@ -415,15 +415,15 @@ refine flow ENIP_Flow += {
         %{
             if ( ::get_attribute_list_request )
             {
-                string attribute_ids = fmt("%d",${data.attribute_list[0]});
-                
+                string attribute_ids = zeek::util::fmt("%d",${data.attribute_list[0]});
+
                 for(uint8 i=1; i<${data.attribute_count};i++)
-                    attribute_ids += fmt(",%d",${data.attribute_list[i]});
-                
-                BifEvent::generate_get_attribute_list_request(connection()->bro_analyzer(),
-                                                             connection()->bro_analyzer()->Conn(),
-                                                             ${data.attribute_count},
-                                                             new StringVal(attribute_ids));
+                    attribute_ids += zeek::util::fmt(",%d",${data.attribute_list[i]});
+
+                zeek::BifEvent::enqueue_get_attribute_list_request(connection()->zeek_analyzer(),
+                                                                   connection()->zeek_analyzer()->Conn(),
+                                                                   ${data.attribute_count},
+                                                                   zeek::make_intrusive<zeek::StringVal>(attribute_ids));
             }
             return true;
         %}
@@ -435,10 +435,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::get_attribute_list_response )
             {
-                BifEvent::generate_get_attribute_list_response(connection()->bro_analyzer(),
-                                                              connection()->bro_analyzer()->Conn(),
-                                                              ${data.attribute_count},
-                                                              bytestring_to_val(${data.attribute_data}));
+                zeek::BifEvent::enqueue_get_attribute_list_response(connection()->zeek_analyzer(),
+                                                                    connection()->zeek_analyzer()->Conn(),
+                                                                    ${data.attribute_count},
+                                                                    to_stringval(${data.attribute_data}));
             }
             return true;
         %}
@@ -450,10 +450,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::set_attribute_list_request )
             {
-                BifEvent::generate_set_attribute_list_request(connection()->bro_analyzer(),
-                                                             connection()->bro_analyzer()->Conn(),
-                                                             ${data.attribute_count},
-                                                             bytestring_to_val(${data.attribute_data}));
+                zeek::BifEvent::enqueue_set_attribute_list_request(connection()->zeek_analyzer(),
+                                                                   connection()->zeek_analyzer()->Conn(),
+                                                                   ${data.attribute_count},
+                                                                   to_stringval(${data.attribute_data}));
             }
             return true;
         %}
@@ -465,10 +465,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::set_attribute_list_response )
             {
-                BifEvent::generate_set_attribute_list_response(connection()->bro_analyzer(),
-                                                              connection()->bro_analyzer()->Conn(),
-                                                              ${data.attribute_count},
-                                                              bytestring_to_val(${data.attribute_data}));
+                zeek::BifEvent::enqueue_set_attribute_list_response(connection()->zeek_analyzer(),
+                                                                    connection()->zeek_analyzer()->Conn(),
+                                                                    ${data.attribute_count},
+                                                                    to_stringval(${data.attribute_data}));
             }
             return true;
         %}
@@ -480,19 +480,19 @@ refine flow ENIP_Flow += {
         %{
             if ( ::multiple_service_request )
             {
-                uint8 c = 0; 
+                uint8 c = 0;
                 uint8 service_count = ${data.service_count};
                 string services = "";
                 for(uint8 i=0; i < service_count;i++)
                 {
                     c = ${data.service_offsets[i]};
-                    services += fmt("0x%02x,",${data.services[c-(2*service_count)-2]});
+                    services += zeek::util::fmt("0x%02x,",${data.services[c-(2*service_count)-2]});
                 }
-                
-                BifEvent::generate_multiple_service_request(connection()->bro_analyzer(),
-                                                           connection()->bro_analyzer()->Conn(),
-                                                           service_count,
-                                                           new StringVal(services));
+
+                zeek::BifEvent::enqueue_multiple_service_request(connection()->zeek_analyzer(),
+                                                                 connection()->zeek_analyzer()->Conn(),
+                                                                 service_count,
+                                                                 zeek::make_intrusive<zeek::StringVal>(services));
             }
             return true;
         %}
@@ -504,19 +504,19 @@ refine flow ENIP_Flow += {
         %{
             if ( ::multiple_service_response )
             {
-                uint8 c = 0; 
+                uint8 c = 0;
                 uint8 service_count = ${data.service_count};
                 string services = "";
                 for(uint8 i=0; i < service_count;i++)
                 {
                     c = ${data.service_offsets[i]};
-                    services += fmt("0x%02x,",${data.services[c-(2*service_count)-2]});
+                    services += zeek::util::fmt("0x%02x,",${data.services[c-(2*service_count)-2]});
                 }
-                
-                BifEvent::generate_multiple_service_response(connection()->bro_analyzer(),
-                                                            connection()->bro_analyzer()->Conn(),
-                                                            service_count,
-                                                            new StringVal(services));
+
+                zeek::BifEvent::enqueue_multiple_service_response(connection()->zeek_analyzer(),
+                                                                  connection()->zeek_analyzer()->Conn(),
+                                                                  service_count,
+                                                                  zeek::make_intrusive<zeek::StringVal>(services));
             }
             return true;
         %}
@@ -528,9 +528,9 @@ refine flow ENIP_Flow += {
         %{
             if ( ::get_attribute_single_response )
             {
-                BifEvent::generate_get_attribute_single_response(connection()->bro_analyzer(),
-                                                                connection()->bro_analyzer()->Conn(),
-                                                                bytestring_to_val(${data.attribute_data}));
+                zeek::BifEvent::enqueue_get_attribute_single_response(connection()->zeek_analyzer(),
+                                                                      connection()->zeek_analyzer()->Conn(),
+                                                                      to_stringval(${data.attribute_data}));
             }
             return true;
         %}
@@ -542,10 +542,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::set_attribute_single_request )
             {
-                BifEvent::generate_set_attribute_single_request(connection()->bro_analyzer(),
-                                                               connection()->bro_analyzer()->Conn(),
-                                                               ${data.attribute_id},
-                                                               bytestring_to_val(${data.attribute_data}));
+                zeek::BifEvent::enqueue_set_attribute_single_request(connection()->zeek_analyzer(),
+                                                                     connection()->zeek_analyzer()->Conn(),
+                                                                     ${data.attribute_id},
+                                                                     to_stringval(${data.attribute_data}));
             }
             return true;
         %}
