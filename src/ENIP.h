@@ -3,7 +3,11 @@
 #pragma once
 
 #include <zeek/analyzer/protocol/tcp/TCP.h>
+#if ZEEK_VERSION_NUMBER >= 40100
 #include <zeek/packet_analysis/protocol/udp/UDPSessionAdapter.h>
+#else
+#include <zeek/analyzer/protocol/udp/UDP.h>
+#endif
 
 #include "enip_pac.h"
 
