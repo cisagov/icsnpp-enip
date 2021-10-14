@@ -1,5 +1,5 @@
-%include binpac.pac
-%include bro.pac
+%include zeek/binpac.pac
+%include zeek/zeek.pac
 
 %extern{
     #include "events.bif.h"
@@ -10,7 +10,7 @@ analyzer ENIP withcontext {
     flow:       ENIP_Flow;
 };
 
-connection ENIP_Conn(bro_analyzer: BroAnalyzer) {
+connection ENIP_Conn(zeek_analyzer: ZeekAnalyzer) {
     upflow   = ENIP_Flow(true);
     downflow = ENIP_Flow(false);
 };

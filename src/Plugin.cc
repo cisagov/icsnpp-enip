@@ -1,10 +1,10 @@
 // Copyright (c) 2020 Battelle Energy Alliance, LLC.  All rights reserved.
 #include "Plugin.h"
-#include "analyzer/Component.h"
+#include "zeek/analyzer/Component.h"
 
-namespace plugin 
-{ 
-    namespace ICSNPP_ENIP 
+namespace plugin
+{
+    namespace ICSNPP_ENIP
     {
         Plugin plugin;
     }
@@ -12,16 +12,16 @@ namespace plugin
 
 using namespace plugin::ICSNPP_ENIP;
 
-plugin::Configuration Plugin::Configure() 
+zeek::plugin::Configuration Plugin::Configure()
 {
-    AddComponent(new ::analyzer::Component("ENIP_TCP",::analyzer::enip::ENIP_TCP_Analyzer::Instantiate));    
-    AddComponent(new ::analyzer::Component("ENIP_UDP",::analyzer::enip::ENIP_UDP_Analyzer::Instantiate));    
+    AddComponent(new zeek::analyzer::Component("ENIP_TCP",zeek::analyzer::enip::ENIP_TCP_Analyzer::Instantiate));
+    AddComponent(new zeek::analyzer::Component("ENIP_UDP",zeek::analyzer::enip::ENIP_UDP_Analyzer::Instantiate));
 
-    plugin::Configuration config;
+    zeek::plugin::Configuration config;
     config.name = "ICSNPP::ENIP";
     config.description = "Ethernet/IP and CIP Protocol analyzer for TCP/UDP";
     config.version.major = 1;
     config.version.minor = 0;
-    
+
     return config;
 }
