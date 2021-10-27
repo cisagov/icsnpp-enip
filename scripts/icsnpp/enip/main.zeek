@@ -152,7 +152,7 @@ event enip_header(c: connection,
                   sender_context: string,
                   options: count) {
 
-    set_service("enip");
+    set_service(c, "enip");
     local enip_item: ENIP_Header;
     enip_item$ts  = network_time();
     enip_item$uid = c$uid;
@@ -181,7 +181,7 @@ event cip_header(c: connection,
                  data_id: string,
                  other_id: string){
 
-    set_service("cip");
+    set_service(c, "cip");
     local cip_header_item: CIP_Header;
     cip_header_item$ts  = network_time();
     cip_header_item$uid = c$uid;
@@ -228,7 +228,7 @@ event cip_io(c: connection,
              data_length: count,
              data: string){
 
-    set_service("cip");
+    set_service(c, "cip");
     local cip_io_item: CIP_IO_Log;
     cip_io_item$ts  = network_time();
     cip_io_item$uid = c$uid;
@@ -257,7 +257,7 @@ event cip_identity(c: connection, encapsulation_version: count,
                    product_name: string,
                    state: count ){
 
-    set_service("cip");
+    set_service(c, "cip");
     local cip_identity_item: CIP_Identity_Item_Log;
     cip_identity_item$ts  = network_time();
     cip_identity_item$uid = c$uid;
