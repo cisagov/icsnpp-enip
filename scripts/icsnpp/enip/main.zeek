@@ -1,6 +1,6 @@
 ##! main.zeek
 ##!
-##! Binpac Ethernet/IP (ENIP) Analyzer - Contains the base script-layer functionality for 
+##! Binpac Ethernet/IP (ENIP) Analyzer - Contains the base script-layer functionality for
 ##!                                      processing events emitted from the analyzer.
 ##!
 ##! Author:   Stephen Kleinheider
@@ -11,11 +11,11 @@
 module ENIP;
 
 export{
-    redef enum Log::ID += { LOG_ENIP, 
-                            LOG_CIP, 
-                            LOG_CIP_IO, 
+    redef enum Log::ID += { LOG_ENIP,
+                            LOG_CIP,
+                            LOG_CIP_IO,
                             LOG_CIP_IDENTITY };
-    
+
     ###############################################################################################
     ##################################  ENIP_Header -> enip.log  ##################################
     ###############################################################################################
@@ -59,7 +59,7 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
-        connection_id           : string    &log;   # CIP Connection Identifier 
+        connection_id           : string    &log;   # CIP Connection Identifier
         sequence_number         : count     &log;   # CIP Sequence Number with Connection
         data_length             : count     &log;   # Length of io_data field
         io_data                 : string    &log;   # CIP IO Data
@@ -113,20 +113,20 @@ redef likely_server_ports += { ports };
 ################  Defines Log Streams for enip.log, cip.log, and cip_identity.log  ################
 ###################################################################################################
 event zeek_init() &priority=5 {
-    Log::create_stream(ENIP::LOG_ENIP, [$columns=ENIP_Header, 
-                                        $ev=log_enip, 
+    Log::create_stream(ENIP::LOG_ENIP, [$columns=ENIP_Header,
+                                        $ev=log_enip,
                                         $path="enip"]);
 
-    Log::create_stream(ENIP::LOG_CIP, [$columns=CIP_Header, 
-                                       $ev=log_cip, 
+    Log::create_stream(ENIP::LOG_CIP, [$columns=CIP_Header,
+                                       $ev=log_cip,
                                        $path="cip"]);
 
-    Log::create_stream(ENIP::LOG_CIP_IO, [$columns=CIP_IO_Log, 
-                                          $ev=log_cip_io, 
+    Log::create_stream(ENIP::LOG_CIP_IO, [$columns=CIP_IO_Log,
+                                          $ev=log_cip_io,
                                           $path="cip_io"]);
 
-    Log::create_stream(ENIP::LOG_CIP_IDENTITY, [$columns=CIP_Identity_Item_Log, 
-                                                $ev=log_cip_identity, 
+    Log::create_stream(ENIP::LOG_CIP_IDENTITY, [$columns=CIP_Identity_Item_Log,
+                                                $ev=log_cip_identity,
                                                 $path="cip_identity"]);
 
     Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
@@ -134,16 +134,25 @@ event zeek_init() &priority=5 {
 }
 
 ###################################################################################################
+#######  Ensure that conn.log:service is set if it has not already been                     #######
+###################################################################################################
+function set_service(c: connection, service: string) {
+  if ((!c?$service) || (|c$service| == 0))
+    add c$service[service];
+}
+
+###################################################################################################
 #######################  Defines logging of enip_header event -> enip.log  ########################
 ###################################################################################################
-event enip_header(c: connection, 
-                  command: count, 
+event enip_header(c: connection,
+                  command: count,
                   length: count,
-                  session_handle: count, 
-                  status: count, 
-                  sender_context: string, 
+                  session_handle: count,
+                  status: count,
+                  sender_context: string,
                   options: count) {
-    
+
+    set_service(c, "enip");
     local enip_item: ENIP_Header;
     enip_item$ts  = network_time();
     enip_item$uid = c$uid;
@@ -162,16 +171,17 @@ event enip_header(c: connection,
 ###################################################################################################
 ########################  Defines logging of cip_header event -> cip.log  #########################
 ###################################################################################################
-event cip_header(c: connection, 
-                 cip_sequence_count: count, 
-                 service: count, 
-                 response: bool, 
-                 status: count, class_id: count, 
-                 instance_id: count, 
-                 attribute_id: count, 
-                 data_id: string, 
+event cip_header(c: connection,
+                 cip_sequence_count: count,
+                 service: count,
+                 response: bool,
+                 status: count, class_id: count,
+                 instance_id: count,
+                 attribute_id: count,
+                 data_id: string,
                  other_id: string){
-    
+
+    set_service(c, "cip");
     local cip_header_item: CIP_Header;
     cip_header_item$ts  = network_time();
     cip_header_item$uid = c$uid;
@@ -179,29 +189,29 @@ event cip_header(c: connection,
 
     if (cip_sequence_count != 0)
         cip_header_item$cip_sequence_count = cip_sequence_count;
-    
+
     cip_header_item$cip_service = cip_services[service];
-    
+
     if(response){
         cip_header_item$direction = "response";
         cip_header_item$cip_status = cip_statuses[status];
     }else{
         cip_header_item$direction = "request";
-        
+
         if(class_id != UINT32_MAX){
             cip_header_item$class_id = fmt("0x%x",class_id);
             cip_header_item$class_name = cip_classes[class_id];
         }
-        
+
         if(instance_id != UINT32_MAX)
             cip_header_item$instance_id = fmt("0x%x",instance_id);
-        
+
         if(attribute_id != UINT32_MAX)
             cip_header_item$attribute_id = fmt("0x%x",attribute_id);
-        
+
         if(data_id != "")
             cip_header_item$data_id = data_id;
-        
+
         if(other_id != "")
             cip_header_item$other_id = other_id;
     }
@@ -212,12 +222,13 @@ event cip_header(c: connection,
 ###################################################################################################
 #########################  Defines logging of cip_io event -> cip_io.log  #########################
 ###################################################################################################
-event cip_io(c: connection, 
-             connection_identifier: count, 
-             sequence_number: count, 
-             data_length: count, 
+event cip_io(c: connection,
+             connection_identifier: count,
+             sequence_number: count,
+             data_length: count,
              data: string){
 
+    set_service(c, "cip");
     local cip_io_item: CIP_IO_Log;
     cip_io_item$ts  = network_time();
     cip_io_item$uid = c$uid;
@@ -245,7 +256,8 @@ event cip_identity(c: connection, encapsulation_version: count,
                    serial_number: count,
                    product_name: string,
                    state: count ){
-    
+
+    set_service(c, "cip");
     local cip_identity_item: CIP_Identity_Item_Log;
     cip_identity_item$ts  = network_time();
     cip_identity_item$uid = c$uid;
