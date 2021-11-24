@@ -137,8 +137,8 @@ event zeek_init() &priority=5 {
 #######  Ensure that conn.log:service is set if it has not already been                     #######
 ###################################################################################################
 function set_service(c: connection, service: string) {
-  if ((!c?$service) || (|c$service| == 0))
-    add c$service[service];
+    if ((!c?$service) || (|c$service| == 0))
+        add c$service[service];
 }
 
 ###################################################################################################
@@ -236,7 +236,7 @@ event cip_io(c: connection,
     cip_io_item$connection_id = fmt("0x%08x", connection_identifier);;
     cip_io_item$sequence_number = sequence_number;
     cip_io_item$data_length = data_length;
-    cip_io_item$io_data = data;
+    cip_io_item$io_data = bytestring_to_hexstr(data);
 
     Log::write(LOG_CIP_IO, cip_io_item);
 }
