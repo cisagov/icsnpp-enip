@@ -23,7 +23,8 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
-        enip_command            : string    &log;   # Ethernet/IP Command (see enip_commands)
+        enip_command_code       : string    &log;   # Ethernet/IP Command Code (in hex)
+        enip_command            : string    &log;   # Ethernet/IP Command Name (see enip_commands)
         length                  : count     &log;   # Length of ENIP data following header
         session_handle          : string    &log;   # Sesesion identifier
         enip_status             : string    &log;   # Status code (see enip_statuses)
@@ -41,7 +42,8 @@ export{
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
         cip_sequence_count      : count     &log;   # CIP sequence number for transport
         direction               : string    &log;   # Request or Response
-        cip_service             : string    &log;   # CIP service type (see cip_services)
+        cip_service_code        : string    &log;   # CIP service code (in hex)
+        cip_service             : string    &log;   # CIP service name (see cip_services)
         cip_status              : string    &log;   # CIP status code (see cip_statuses)
         class_id                : string    &log;   # CIP Request Path - Class ID
         class_name              : string    &log;   # CIP Request Path - Class Name (see cip_classes)
@@ -158,6 +160,7 @@ event enip_header(c: connection,
     enip_item$uid = c$uid;
     enip_item$id  = c$id;
 
+    enip_item$enip_command_code = fmt("0x%02x",command);
     enip_item$enip_command = enip_commands[command];
     enip_item$length = length;
     enip_item$session_handle = fmt("0x%08x", session_handle);
@@ -190,6 +193,7 @@ event cip_header(c: connection,
     if (cip_sequence_count != 0)
         cip_header_item$cip_sequence_count = cip_sequence_count;
 
+    cip_header_item$cip_service_code = fmt("0x%02x",service);
     cip_header_item$cip_service = cip_services[service];
 
     if(response){
@@ -199,15 +203,15 @@ event cip_header(c: connection,
         cip_header_item$direction = "request";
 
         if(class_id != UINT32_MAX){
-            cip_header_item$class_id = fmt("0x%x",class_id);
+            cip_header_item$class_id = fmt("0x%02x",class_id);
             cip_header_item$class_name = cip_classes[class_id];
         }
 
         if(instance_id != UINT32_MAX)
-            cip_header_item$instance_id = fmt("0x%x",instance_id);
+            cip_header_item$instance_id = fmt("0x%02x",instance_id);
 
         if(attribute_id != UINT32_MAX)
-            cip_header_item$attribute_id = fmt("0x%x",attribute_id);
+            cip_header_item$attribute_id = fmt("0x%02x",attribute_id);
 
         if(data_id != "")
             cip_header_item$data_id = data_id;

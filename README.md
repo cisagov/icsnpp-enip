@@ -93,7 +93,8 @@ This log captures Ethernet/IP header information for every Ethernet/IP packet an
 | ts                | time      | Timestamp                                                 |
 | uid               | string    | Unique ID for this connection                             |
 | id                | conn_id   | Default Zeek connection info (IP addresses, ports)        |
-| enip_command      | string    | Ethernet/IP command                                       |
+| enip_command_code | string    | Ethernet/IP command code                                  |
+| enip_command      | string    | Ethernet/IP command name                                  |
 | length            | count     | Length of ENIP data following header                      |
 | session_handle    | string    | Session identifier                                        |
 | enip_status       | string    | Ethernet/IP status code                                   |
@@ -115,7 +116,8 @@ This log captures CIP header information for every CIP packet and logs it to **c
 | id                    | conn_id   | Default Zeek connection info (IP addresses, ports)        |
 | cip_sequence_count    | count     | CIP sequence number                                       |
 | direction             | string    | Request or response                                       |
-| cip_service           | string    | CIP service type                                          |
+| cip_service_code      | string    | CIP service code                                          |
+| cip_service           | string    | CIP service name                                          |
 | cip_status            | string    | CIP status code                                           |
 | class_id              | string    | CIP request path - class ID                               |
 | class_name            | string    | CIP request path - class name                             |

@@ -24,7 +24,8 @@
     }CIP_Request_Path;
 
     uint32 get_number(uint8 size, uint8 x, const_bytestring data);
-    CIP_Request_Path test_parse(const_bytestring data);
+    CIP_Request_Path parse_request_path(const_bytestring data);
+    CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint16 starting_location);
 
 %}
 
@@ -44,7 +45,7 @@
     }
 
     // Parse request path and return CIP_Request_Path struct
-    CIP_Request_Path test_parse(const_bytestring data)
+    CIP_Request_Path parse_request_path(const_bytestring data)
     {
         CIP_Request_Path request_path;
 
@@ -52,6 +53,131 @@
         uint8 data_length = data.length();
 
         while((x+1) < data_length){
+            switch(data[x] >> 5){
+                case 0: // Port Segment
+                {
+                    request_path.other_path += "Port Segment: ";
+                    uint8 header = data[x];
+                    if((header & 0xf) == 15){ // Check for Extended Port Identifier
+                        request_path.other_path += zeek::util::fmt("Port Number = 0x%02x%02x ",data[x+2],data[x+1]);
+                        x += 3;
+                    }else{
+                        request_path.other_path += zeek::util::fmt("Port Number = %d ",data[x] & 0xf);
+                        x += 2;
+                    }
+                    if (((header >> 4) & 1) == 1){
+                        request_path.other_path += "Link Address = ";
+                        uint8 size = data[x];
+                        x += 1;
+                        for ( uint8 i = x; i < size+x; i++ )
+                            request_path.other_path += data[i];
+                        x += size + 1;
+                    }else{
+                        request_path.other_path += zeek::util::fmt("Link Address = %d",data[x]);
+                        x += 1;
+                    }
+                    request_path.other_path += "; ";
+                    break;
+                }
+                case 1: // Logical Segment
+                {
+                    uint8 choice = (data[x] & 0x1c) >> 2;
+                    uint8 size = data[x] & 3;
+                    x += 1;
+
+                    if(choice == 0)
+                        request_path.class_id = get_number(size, x, data);
+                    else if(choice == 1)
+                        request_path.instance_id = get_number(size, x, data);
+                    else if(choice == 4)
+                        request_path.attribute_id = get_number(size, x, data);
+                    else
+                        request_path.other_path += zeek::util::fmt("0x%x",get_number(size, x, data));
+
+                    if(size == 0)
+                        x += 1;
+                    else if(size ==1)
+                        x += 2;
+                    else
+                        x += 4;
+
+
+                    break;
+                }
+                case 2: // Network Segment
+                {
+                    request_path.other_path += "Network Segment: ";
+                    uint8 header = data[x];
+                    x += 1;
+                    string network_choices[3] = {"Schedule","Fixed Tag","Production Inhibit Time"};
+                    if(((header & 0x10) >> 4) == 0){
+                        request_path.other_path += network_choices[(header & 0x7)] + "(";
+                        request_path.other_path += zeek::util::fmt("0x%02x); ",data[x]);
+                        x += 1;
+                    }else{
+                        uint8 size = data[x]*2;
+                        x += 1;
+                        for ( uint8 i = x; i < size+x; i++ )
+                            request_path.other_path += data[i];
+                        x += size;
+                    }
+                    return request_path;
+                }
+                case 3: // Symbolic Segment
+                {
+                    request_path.other_path += "Symbolic Segment: ";
+                    x += 1;
+                    uint8 size = data[x];
+                    x += 1;
+                    for ( uint8 i = x; i < size+x; i++ )
+                        request_path.other_path += data[i];
+                    x += size;
+                    return request_path;
+                }
+                case 4: // Data Segment
+                {
+                    uint8 header = data[x];
+                    x += 1;
+                    if (header == 0x80){
+                        uint8 size = data[x]*2;
+                        for ( uint8 i = x; i < size+x; i++ )
+                            request_path.data_segment += data[i];
+                        x += size;
+                    }else if(header == 0x91){
+                        uint8 size = data[x];
+                        x += 1;
+                        for ( uint8 i = x; i < size+x; i++ )
+                            request_path.data_segment += data[i];
+                        x += size;
+                        if ((size % 2) == 1)
+                            x += 1;
+                    }
+                    return request_path;
+                }
+                default:
+                {
+                    request_path.other_path += "Unknown Segment: ";
+                    for ( uint8 i = 0; i < data.length(); ++i )
+                        request_path.other_path += zeek::util::fmt("%x",data[i]);
+                    return request_path;
+                }
+            }
+
+        }
+        return request_path;
+    }
+
+    // Parse request path from multiple service packet and return CIP_Request_Path struct
+    CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint16 starting_location)
+    {
+        CIP_Request_Path request_path;
+
+        uint16 x = starting_location;
+        uint8 data_length = starting_location + (data[x] * 2) + 1;
+        x += 1;
+
+        while( (x + 1) < data_length )
+        {
             switch(data[x] >> 5){
                 case 0: // Port Segment
                 {
@@ -196,10 +322,16 @@ refine flow ENIP_Flow += {
         %{
             if ( ::cip_header )
             {
+                // MULTIPLE_SERVICE CIP header data is parsed in process_multiple_service_request 
+                // and process_multiple_service_response functions, so no need to duplicate
+                // parsing here
+                if(${cip_header.service_code} == MULTIPLE_SERVICE)
+                    return true;
+
                 CIP_Request_Path request_path;
 
                 if(${cip_header.request_or_response} != 1)
-                    request_path = test_parse(${cip_header.request_path.request_path});
+                    request_path = parse_request_path(${cip_header.request_path.request_path});
 
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
@@ -478,22 +610,47 @@ refine flow ENIP_Flow += {
     ###############################################################################################
     function process_multiple_service_request(data: Multiple_Service_Packet_Request): bool
         %{
-            if ( ::multiple_service_request )
+            if ( ::cip_header )
             {
-                uint8 c = 0;
+                uint16 service_packet_location;
+
                 uint8 service_count = ${data.service_count};
-                string services = "";
+                uint16 cip_sequence_count = ${data.cip_sequence_count};
+                CIP_Request_Path request_path = parse_request_path(${data.request_path.request_path});
+
+                // CIP Header event for multiple service packet
+                zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
+                                                   connection()->zeek_analyzer()->Conn(),
+                                                   ${data.cip_sequence_count},
+                                                   MULTIPLE_SERVICE,
+                                                   false,
+                                                   0,
+                                                   request_path.class_id,
+                                                   request_path.instance_id,
+                                                   request_path.attribute_id,
+                                                   zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
+                                                   zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+
+                // CIP Header event for each service within multiple service packet
                 for(uint8 i=0; i < service_count;i++)
                 {
-                    c = ${data.service_offsets[i]};
-                    services += zeek::util::fmt("0x%02x,",${data.services[c-(2*service_count)-2]});
-                }
+                    service_packet_location = ${data.service_offsets[i]} - (2*service_count) - 2;
+                    request_path = parse_request_multiple_service_packet(${data.services},service_packet_location+1);
 
-                zeek::BifEvent::enqueue_multiple_service_request(connection()->zeek_analyzer(),
-                                                                 connection()->zeek_analyzer()->Conn(),
-                                                                 service_count,
-                                                                 zeek::make_intrusive<zeek::StringVal>(services));
+                    zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
+                                                       connection()->zeek_analyzer()->Conn(),
+                                                       cip_sequence_count,
+                                                       ${data.services[service_packet_location]} & 0x7f,
+                                                       false,
+                                                       0,
+                                                       request_path.class_id,
+                                                       request_path.instance_id,
+                                                       request_path.attribute_id,
+                                                       zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
+                                                       zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+                }
             }
+
             return true;
         %}
 
@@ -502,21 +659,44 @@ refine flow ENIP_Flow += {
     ###############################################################################################
     function process_multiple_service_response(data: Multiple_Service_Packet_Response): bool
         %{
-            if ( ::multiple_service_response )
+            if ( ::cip_header )
             {
-                uint8 c = 0;
+                CIP_Request_Path request_path;
+                uint16 service_packet_location;
+                
                 uint8 service_count = ${data.service_count};
-                string services = "";
+                uint16 cip_sequence_count = ${data.cip_sequence_count};
+
+                // CIP Header event for multiple service packet
+                zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
+                                                   connection()->zeek_analyzer()->Conn(),
+                                                   ${data.cip_sequence_count},
+                                                   MULTIPLE_SERVICE,
+                                                   true,
+                                                   ${data.status},
+                                                   request_path.class_id,
+                                                   request_path.instance_id,
+                                                   request_path.attribute_id,
+                                                   zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
+                                                   zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+
+                // CIP Header event for each service within multiple service packet
                 for(uint8 i=0; i < service_count;i++)
                 {
-                    c = ${data.service_offsets[i]};
-                    services += zeek::util::fmt("0x%02x,",${data.services[c-(2*service_count)-2]});
-                }
+                    service_packet_location = ${data.service_offsets[i]} - (2*service_count) - 2;
 
-                zeek::BifEvent::enqueue_multiple_service_response(connection()->zeek_analyzer(),
-                                                                  connection()->zeek_analyzer()->Conn(),
-                                                                  service_count,
-                                                                  zeek::make_intrusive<zeek::StringVal>(services));
+                    zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
+                                                       connection()->zeek_analyzer()->Conn(),
+                                                       cip_sequence_count,
+                                                       ${data.services[service_packet_location]} & 0x7f,
+                                                       true,
+                                                       ${data.services[service_packet_location + 2]},
+                                                       request_path.class_id,
+                                                       request_path.instance_id,
+                                                       request_path.attribute_id,
+                                                       zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
+                                                       zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+                }
             }
             return true;
         %}

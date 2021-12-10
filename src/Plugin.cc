@@ -21,7 +21,7 @@ zeek::plugin::Configuration Plugin::Configure()
     config.name = "ICSNPP::ENIP";
     config.description = "Ethernet/IP and CIP Protocol analyzer for TCP/UDP";
     config.version.major = 1;
-    config.version.minor = 0;
+    config.version.minor = 1;
 
     return config;
 }

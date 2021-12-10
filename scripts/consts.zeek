@@ -26,7 +26,7 @@ export {
         [0x70] = "Send Unit Data",
         [0x72] = "Indicate Status",
         [0x73] = "Cancel",
-    } &default = function(n: count): string {return fmt("Unknown ENIP Command-0x%02x", n); };
+    } &default = function(n: count): string {return "unknown";};
 
     ###############################################################################################
     #################################  Ethernet/IP Status Codes  ##################################
@@ -128,7 +128,7 @@ export {
         [0x52] = "Read Data Fragmented",
         [0x53] = "Write Data Fragmented",
         [0x54] = "Forward Open",
-    } &default = function(n: count): string {return fmt("Unknown CIP Service-0x%02x", n); };
+    } &default = function(n: count): string {return "unknown"; };
 
     ###############################################################################################
     #######################################  CIP Class IDs  #######################################
@@ -225,7 +225,7 @@ export {
         [0xF6] = "Ethernet Link",
         [0xF7] = "CompoNet",
         [0xF8] = "CompoNet Repeater",
-    } &default = function(n: count): string {return "Unknown"; };
+    } &default = function(n: count): string {return "unknown"; };
 
     ###############################################################################################
     #####################################  CIP Vendor Codes  ######################################
