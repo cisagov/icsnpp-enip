@@ -50,34 +50,14 @@
         CIP_Request_Path request_path;
 
         uint8 x = 0;
-        uint8 data_length = data.length();
+        uint16 data_length = data.length();
 
         while((x+1) < data_length){
             switch(data[x] >> 5){
                 case 0: // Port Segment
                 {
-                    request_path.other_path += "Port Segment: ";
-                    uint8 header = data[x];
-                    if((header & 0xf) == 15){ // Check for Extended Port Identifier
-                        request_path.other_path += zeek::util::fmt("Port Number = 0x%02x%02x ",data[x+2],data[x+1]);
-                        x += 3;
-                    }else{
-                        request_path.other_path += zeek::util::fmt("Port Number = %d ",data[x] & 0xf);
-                        x += 2;
-                    }
-                    if (((header >> 4) & 1) == 1){
-                        request_path.other_path += "Link Address = ";
-                        uint8 size = data[x];
-                        x += 1;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.other_path += data[i];
-                        x += size + 1;
-                    }else{
-                        request_path.other_path += zeek::util::fmt("Link Address = %d",data[x]);
-                        x += 1;
-                    }
-                    request_path.other_path += "; ";
-                    break;
+                    request_path.other_path = "Port Segment";
+                    return request_path;
                 }
                 case 1: // Logical Segment
                 {
@@ -106,7 +86,7 @@
                 }
                 case 2: // Network Segment
                 {
-                    request_path.other_path += "Network Segment: ";
+                    request_path.other_path = "Network Segment: ";
                     uint8 header = data[x];
                     x += 1;
                     string network_choices[3] = {"Schedule","Fixed Tag","Production Inhibit Time"};
@@ -125,7 +105,7 @@
                 }
                 case 3: // Symbolic Segment
                 {
-                    request_path.other_path += "Symbolic Segment: ";
+                    request_path.other_path = "Symbolic Segment: ";
                     x += 1;
                     uint8 size = data[x];
                     x += 1;
@@ -156,9 +136,7 @@
                 }
                 default:
                 {
-                    request_path.other_path += "Unknown Segment: ";
-                    for ( uint8 i = 0; i < data.length(); ++i )
-                        request_path.other_path += zeek::util::fmt("%x",data[i]);
+                    request_path.other_path = "Unknown Segment";
                     return request_path;
                 }
             }
@@ -173,7 +151,7 @@
         CIP_Request_Path request_path;
 
         uint16 x = starting_location;
-        uint8 data_length = starting_location + (data[x] * 2) + 1;
+        uint16 data_length = starting_location + (data[x] * 2) + 1;
         x += 1;
 
         while( (x + 1) < data_length )
@@ -181,28 +159,8 @@
             switch(data[x] >> 5){
                 case 0: // Port Segment
                 {
-                    request_path.other_path += "Port Segment: ";
-                    uint8 header = data[x];
-                    if((header & 0xf) == 15){ // Check for Extended Port Identifier
-                        request_path.other_path += zeek::util::fmt("Port Number = 0x%02x%02x ",data[x+2],data[x+1]);
-                        x += 3;
-                    }else{
-                        request_path.other_path += zeek::util::fmt("Port Number = %d ",data[x] & 0xf);
-                        x += 2;
-                    }
-                    if (((header >> 4) & 1) == 1){
-                        request_path.other_path += "Link Address = ";
-                        uint8 size = data[x];
-                        x += 1;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.other_path += data[i];
-                        x += size + 1;
-                    }else{
-                        request_path.other_path += zeek::util::fmt("Link Address = %d",data[x]);
-                        x += 1;
-                    }
-                    request_path.other_path += "; ";
-                    break;
+                    request_path.other_path = "Port Segment";
+                    return request_path;
                 }
                 case 1: // Logical Segment
                 {
@@ -231,7 +189,7 @@
                 }
                 case 2: // Network Segment
                 {
-                    request_path.other_path += "Network Segment: ";
+                    request_path.other_path = "Network Segment: ";
                     uint8 header = data[x];
                     x += 1;
                     string network_choices[3] = {"Schedule","Fixed Tag","Production Inhibit Time"};
@@ -250,7 +208,7 @@
                 }
                 case 3: // Symbolic Segment
                 {
-                    request_path.other_path += "Symbolic Segment: ";
+                    request_path.other_path = "Symbolic Segment: ";
                     x += 1;
                     uint8 size = data[x];
                     x += 1;
@@ -281,9 +239,7 @@
                 }
                 default:
                 {
-                    request_path.other_path += "Unknown Segment: ";
-                    for ( uint8 i = 0; i < data.length(); ++i )
-                        request_path.other_path += zeek::util::fmt("%x",data[i]);
+                    request_path.other_path = "Unknown Segment";
                     return request_path;
                 }
             }

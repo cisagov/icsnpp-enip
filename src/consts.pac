@@ -21,7 +21,7 @@ enum command_codes
     SEND_RR_DATA                        = 0x006F,
     SEND_UNIT_DATA                      = 0x0070,
     START_DTLS                          = 0x00C8,
-    };
+}
 
 ############################################################
 ######  Ethernet/IP Common Packet Format Item Types  #######
