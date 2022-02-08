@@ -29,14 +29,14 @@
 %code{
 
     // Get uint32 number from data in request path
-    uint32 get_number(uint8 size, uint8 x, const_bytestring data)
+    uint32 get_number(uint8 size, uint16 x, const_bytestring data)
     {
         if(size == 0)
             return data[x];
         else if (size == 1)
-            return (data[x] << 8) | data[x+1];
+            return (data[x+1] << 8) | data[x];
         else if (size == 2)
-            return (data[x] << 24) | (data[x+1] << 13) | (data[x+2] << 8) | data[x+3];
+            return (data[x+3] << 24) | (data[x+2] << 13) | (data[x+1] << 8) | data[x];
 
         return UINT32_MAX;
     }
@@ -46,16 +46,18 @@
     {
         CIP_Request_Path request_path;
 
-        uint8 x = 0;
+        uint16 x = 0;
         uint16 data_length = data.length();
 
         while( (x+1) < data_length )
         {
             if ((data[x] >> 5) == 1)
             {
-                uint8 choice = (data[x] & 0x1c) >> 2;
-                uint8 size = data[x] & 3;
+                uint16 choice = (data[x] & 0x1c) >> 2;
+                uint16 size = data[x] & 3;
                 x += 1;
+                if(size > 0)
+                    x += 1;
 
                 if(choice == 0)
                     request_path.class_id = get_number(size, x, data);
@@ -66,10 +68,14 @@
 
                 if(size == 0)
                     x += 1;
-                else if(size ==1)
+                else if(size == 1)
                     x += 2;
                 else
                     x += 4;
+            }
+            else
+            {
+                return request_path;
             }
         }
         return request_path;
@@ -88,9 +94,11 @@
         {
             if ((data[x] >> 5) == 1)
             {
-                uint8 choice = (data[x] & 0x1c) >> 2;
-                uint8 size = data[x] & 3;
+                uint16 choice = (data[x] & 0x1c) >> 2;
+                uint16 size = data[x] & 3;
                 x += 1;
+                if(size > 0)
+                    x += 1;
 
                 if(choice == 0)
                     request_path.class_id = get_number(size, x, data);
@@ -101,10 +109,14 @@
 
                 if(size == 0)
                     x += 1;
-                else if(size ==1)
+                else if(size == 1)
                     x += 2;
                 else
                     x += 4;
+            }
+            else
+            {
+                return request_path;
             }
 
         }
