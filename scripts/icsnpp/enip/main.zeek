@@ -49,8 +49,6 @@ export{
         class_name              : string    &log;   # CIP Request Path - Class Name (see cip_classes)
         instance_id             : string    &log;   # CIP Request Path - Instance ID
         attribute_id            : string    &log;   # CIP Request Path - Attribute ID
-        data_id                 : string    &log;   # CIP Request Path - Data ID
-        other_id                : string    &log;   # CIP Request Path - Other ID
     };
     global log_cip: event(rec: CIP_Header);
 
@@ -180,9 +178,7 @@ event cip_header(c: connection,
                  response: bool,
                  status: count, class_id: count,
                  instance_id: count,
-                 attribute_id: count,
-                 data_id: string,
-                 other_id: string){
+                 attribute_id: count){
 
     set_service(c, "cip");
     local cip_header_item: CIP_Header;
@@ -213,11 +209,6 @@ event cip_header(c: connection,
         if(attribute_id != UINT32_MAX)
             cip_header_item$attribute_id = fmt("0x%02x",attribute_id);
 
-        if(data_id != "")
-            cip_header_item$data_id = data_id;
-
-        if(other_id != "")
-            cip_header_item$other_id = other_id;
     }
 
     Log::write(LOG_CIP, cip_header_item);

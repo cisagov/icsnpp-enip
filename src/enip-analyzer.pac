@@ -11,14 +11,11 @@
 
     typedef struct CIP_Request_Path {
         uint32 class_id, instance_id, attribute_id;
-        string data_segment, other_path;
 
         CIP_Request_Path(){
             class_id = UINT32_MAX;
             instance_id = UINT32_MAX;
             attribute_id = UINT32_MAX;
-            data_segment = "";
-            other_path = "";
         }
 
     }CIP_Request_Path;
@@ -52,95 +49,28 @@
         uint8 x = 0;
         uint16 data_length = data.length();
 
-        while((x+1) < data_length){
-            switch(data[x] >> 5){
-                case 0: // Port Segment
-                {
-                    request_path.other_path = "Port Segment";
-                    return request_path;
-                }
-                case 1: // Logical Segment
-                {
-                    uint8 choice = (data[x] & 0x1c) >> 2;
-                    uint8 size = data[x] & 3;
-                    x += 1;
+        while( (x+1) < data_length )
+        {
+            if ((data[x] >> 5) == 1)
+            {
+                uint8 choice = (data[x] & 0x1c) >> 2;
+                uint8 size = data[x] & 3;
+                x += 1;
 
-                    if(choice == 0)
-                        request_path.class_id = get_number(size, x, data);
-                    else if(choice == 1)
-                        request_path.instance_id = get_number(size, x, data);
-                    else if(choice == 4)
-                        request_path.attribute_id = get_number(size, x, data);
-                    else
-                        request_path.other_path += zeek::util::fmt("0x%x",get_number(size, x, data));
+                if(choice == 0)
+                    request_path.class_id = get_number(size, x, data);
+                else if(choice == 1)
+                    request_path.instance_id = get_number(size, x, data);
+                else if(choice == 4)
+                    request_path.attribute_id = get_number(size, x, data);
 
-                    if(size == 0)
-                        x += 1;
-                    else if(size ==1)
-                        x += 2;
-                    else
-                        x += 4;
-
-
-                    break;
-                }
-                case 2: // Network Segment
-                {
-                    request_path.other_path = "Network Segment: ";
-                    uint8 header = data[x];
+                if(size == 0)
                     x += 1;
-                    string network_choices[3] = {"Schedule","Fixed Tag","Production Inhibit Time"};
-                    if(((header & 0x10) >> 4) == 0){
-                        request_path.other_path += network_choices[(header & 0x7)] + "(";
-                        request_path.other_path += zeek::util::fmt("0x%02x); ",data[x]);
-                        x += 1;
-                    }else{
-                        uint8 size = data[x]*2;
-                        x += 1;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.other_path += data[i];
-                        x += size;
-                    }
-                    return request_path;
-                }
-                case 3: // Symbolic Segment
-                {
-                    request_path.other_path = "Symbolic Segment: ";
-                    x += 1;
-                    uint8 size = data[x];
-                    x += 1;
-                    for ( uint8 i = x; i < size+x; i++ )
-                        request_path.other_path += data[i];
-                    x += size;
-                    return request_path;
-                }
-                case 4: // Data Segment
-                {
-                    uint8 header = data[x];
-                    x += 1;
-                    if (header == 0x80){
-                        uint8 size = data[x]*2;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.data_segment += data[i];
-                        x += size;
-                    }else if(header == 0x91){
-                        uint8 size = data[x];
-                        x += 1;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.data_segment += data[i];
-                        x += size;
-                        if ((size % 2) == 1)
-                            x += 1;
-                    }
-                    return request_path;
-                }
-                default:
-                {
-                    request_path.other_path = "Unknown Segment";
-                    return request_path;
-                }
+                else if(size ==1)
+                    x += 2;
+                else
+                    x += 4;
             }
-
         }
         return request_path;
     }
@@ -156,92 +86,25 @@
 
         while( (x + 1) < data_length )
         {
-            switch(data[x] >> 5){
-                case 0: // Port Segment
-                {
-                    request_path.other_path = "Port Segment";
-                    return request_path;
-                }
-                case 1: // Logical Segment
-                {
-                    uint8 choice = (data[x] & 0x1c) >> 2;
-                    uint8 size = data[x] & 3;
-                    x += 1;
+            if ((data[x] >> 5) == 1)
+            {
+                uint8 choice = (data[x] & 0x1c) >> 2;
+                uint8 size = data[x] & 3;
+                x += 1;
 
-                    if(choice == 0)
-                        request_path.class_id = get_number(size, x, data);
-                    else if(choice == 1)
-                        request_path.instance_id = get_number(size, x, data);
-                    else if(choice == 4)
-                        request_path.attribute_id = get_number(size, x, data);
-                    else
-                        request_path.other_path += zeek::util::fmt("0x%x",get_number(size, x, data));
+                if(choice == 0)
+                    request_path.class_id = get_number(size, x, data);
+                else if(choice == 1)
+                    request_path.instance_id = get_number(size, x, data);
+                else if(choice == 4)
+                    request_path.attribute_id = get_number(size, x, data);
 
-                    if(size == 0)
-                        x += 1;
-                    else if(size ==1)
-                        x += 2;
-                    else
-                        x += 4;
-
-
-                    break;
-                }
-                case 2: // Network Segment
-                {
-                    request_path.other_path = "Network Segment: ";
-                    uint8 header = data[x];
+                if(size == 0)
                     x += 1;
-                    string network_choices[3] = {"Schedule","Fixed Tag","Production Inhibit Time"};
-                    if(((header & 0x10) >> 4) == 0){
-                        request_path.other_path += network_choices[(header & 0x7)] + "(";
-                        request_path.other_path += zeek::util::fmt("0x%02x); ",data[x]);
-                        x += 1;
-                    }else{
-                        uint8 size = data[x]*2;
-                        x += 1;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.other_path += data[i];
-                        x += size;
-                    }
-                    return request_path;
-                }
-                case 3: // Symbolic Segment
-                {
-                    request_path.other_path = "Symbolic Segment: ";
-                    x += 1;
-                    uint8 size = data[x];
-                    x += 1;
-                    for ( uint8 i = x; i < size+x; i++ )
-                        request_path.other_path += data[i];
-                    x += size;
-                    return request_path;
-                }
-                case 4: // Data Segment
-                {
-                    uint8 header = data[x];
-                    x += 1;
-                    if (header == 0x80){
-                        uint8 size = data[x]*2;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.data_segment += data[i];
-                        x += size;
-                    }else if(header == 0x91){
-                        uint8 size = data[x];
-                        x += 1;
-                        for ( uint8 i = x; i < size+x; i++ )
-                            request_path.data_segment += data[i];
-                        x += size;
-                        if ((size % 2) == 1)
-                            x += 1;
-                    }
-                    return request_path;
-                }
-                default:
-                {
-                    request_path.other_path = "Unknown Segment";
-                    return request_path;
-                }
+                else if(size ==1)
+                    x += 2;
+                else
+                    x += 4;
             }
 
         }
@@ -297,9 +160,7 @@ refine flow ENIP_Flow += {
                                                    ${cip_header.status},
                                                    request_path.class_id,
                                                    request_path.instance_id,
-                                                   request_path.attribute_id,
-                                                   zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
-                                                   zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+                                                   request_path.attribute_id);
             }
             return true;
         %}
@@ -583,9 +444,7 @@ refine flow ENIP_Flow += {
                                                    0,
                                                    request_path.class_id,
                                                    request_path.instance_id,
-                                                   request_path.attribute_id,
-                                                   zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
-                                                   zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+                                                   request_path.attribute_id);
 
                 // CIP Header event for each service within multiple service packet
                 for(uint8 i=0; i < service_count;i++)
@@ -601,9 +460,7 @@ refine flow ENIP_Flow += {
                                                        0,
                                                        request_path.class_id,
                                                        request_path.instance_id,
-                                                       request_path.attribute_id,
-                                                       zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
-                                                       zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+                                                       request_path.attribute_id);
                 }
             }
 
@@ -632,9 +489,7 @@ refine flow ENIP_Flow += {
                                                    ${data.status},
                                                    request_path.class_id,
                                                    request_path.instance_id,
-                                                   request_path.attribute_id,
-                                                   zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
-                                                   zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+                                                   request_path.attribute_id);
 
                 // CIP Header event for each service within multiple service packet
                 for(uint8 i=0; i < service_count;i++)
@@ -649,9 +504,7 @@ refine flow ENIP_Flow += {
                                                        ${data.services[service_packet_location + 2]},
                                                        request_path.class_id,
                                                        request_path.instance_id,
-                                                       request_path.attribute_id,
-                                                       zeek::make_intrusive<zeek::StringVal>(request_path.data_segment),
-                                                       zeek::make_intrusive<zeek::StringVal>(request_path.other_path));
+                                                       request_path.attribute_id);
                 }
             }
             return true;

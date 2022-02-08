@@ -6,7 +6,7 @@ Industrial Control Systems Network Protocol Parsers (ICSNPP) - Ethernet/IP and C
 
 ICSNPP-ENIP is a Zeek plugin for parsing and logging fields within the Ethernet/IP protocol.
 
-This plugin was developed to be fully customizable, so if you would like to drill down into specific BACnet packets and log certain variables, add the logging functionality to [scripts/icsnpp/enip/main.zeek](scripts/icsnpp/enip/main.zeek). The functions within [scripts/icsnpp/enip/main.zeek](scripts/icsnpp/enip/main.zeek) and [src/events.bif](src/events.bif) should prove to be a good guide on how to add new logging functionality.
+This plugin was developed to be fully customizable, so if you would like to drill down into specific ENIP/CIP packets and log certain variables, add the logging functionality to [scripts/icsnpp/enip/main.zeek](scripts/icsnpp/enip/main.zeek). The functions within [scripts/icsnpp/enip/main.zeek](scripts/icsnpp/enip/main.zeek) and [src/events.bif](src/events.bif) should prove to be a good guide on how to add new logging functionality.
 
 This parser produces four log files. These log files are defined in [scripts/icsnpp/enip/main.zeek](scripts/icsnpp/enip/main.zeek).
 * enip.log
@@ -123,8 +123,6 @@ This log captures CIP header information for every CIP packet and logs it to **c
 | class_name            | string    | CIP request path - class name                             |
 | instance_id           | string    | CIP request path - instance ID                            |
 | attribute_id          | string    | CIP request path - attribute ID                           |
-| data_id               | string    | CIP request path - data ID                                |
-| other_id              | string    | CIP request path - other ID                               |
 
 ### CIP I/O Log (cip_io.log)
 

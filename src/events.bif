@@ -45,8 +45,6 @@ event enip_header%(c: connection,
 ##      - class_id              count       -> CIP Request Path - Class ID
 ##      - instance_id           count       -> CIP Request Path - Instance ID
 ##      - attribute_id          count       -> CIP Request Path - Attribute ID
-##      - data_id               string      -> CIP Request Path - Data ID
-##      - other_id              string      -> CIP Request Path - Other ID
 ## Default Output:
 ##      Writes to log file cip.log
 ## ------------------------------------------------------------------------------------------------
@@ -57,9 +55,7 @@ event cip_header%(c: connection,
                   status: count,
                   class_id: count,
                   instance_id: count,
-                  attribute_id: count,
-                  data_id: string,
-                  other_id: string%);
+                  attribute_id: count%);
 
 ## ------------------------------------------cip-identity------------------------------------------
 ## Event Description:
