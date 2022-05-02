@@ -36,7 +36,7 @@ If you are not using site/local.zeek or another site installation of Zeek and ju
 
 ```bash
 git clone https://github.com/cisagov/icsnpp-enip.git
-zeek -Cr icsnpp-enip/examples/enip_cip_example.pcap icsnpp/enip
+zeek -Cr icsnpp-enip/tests/traces/enip_cip_example.pcap icsnpp/enip
 ```
 
 ### Manual Install
@@ -69,7 +69,7 @@ To run this plugin in a site deployment you will need to add the line `@load ics
 If you are not using site/local.zeek or another site installation of Zeek and just want to run this package on a packet capture you can add `icsnpp/enip` to your command to run this plugin's scripts on the packet capture:
 
 ```bash
-zeek -Cr icsnpp-enip/examples/enip_cip_example.pcap icsnpp/enip
+zeek -Cr icsnpp-enip/tests/traces/enip_cip_example.pcap icsnpp/enip
 ```
 
 If you want to deploy this on an already existing Zeek implementation and you don't want to build the plugin on the machine, you can extract the Zeek_Enip.tgz file to the directory of the established ZEEK_PLUGIN_PATH (default is `${ZEEK_INSTALLATION_DIR}/lib/zeek/plugins/`).
@@ -184,6 +184,8 @@ Full ICS Protocol Parsers:
     * Full Zeek protocol parser for Ethercat
 * [Ethernet/IP and CIP](https://github.com/cisagov/icsnpp-enip)
     * Full Zeek protocol parser for Ethernet/IP and CIP
+* [Genisys](https://github.com/cisagov/icsnpp-genisys)
+    * Full Zeek protocol parser for Genisys
 * [OPCUA-Binary](https://github.com/cisagov/icsnpp-opcua-binary)
     * Full Zeek protocol parser for OPC UA (OPC Unified Architecture) - Binary
 
@@ -206,7 +208,7 @@ Idaho National Laboratory is a cutting edge research facility which is a constan
 
 ### License
 
-Copyright 2020 Battelle Energy Alliance, LLC
+Copyright 2022 Battelle Energy Alliance, LLC
 
 Licensed under the 3-Part BSD (the "License");
 you may not use this file except in compliance with the License.
