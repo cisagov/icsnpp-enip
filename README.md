@@ -93,6 +93,7 @@ This log captures Ethernet/IP header information for every Ethernet/IP packet an
 | ts                | time      | Timestamp                                                 |
 | uid               | string    | Unique ID for this connection                             |
 | id                | conn_id   | Default Zeek connection info (IP addresses, ports)        |
+| is_orig           | bool      | True if the packet is sent from the originator            |
 | enip_command_code | string    | Ethernet/IP command code                                  |
 | enip_command      | string    | Ethernet/IP command name                                  |
 | length            | count     | Length of ENIP data following header                      |
@@ -114,6 +115,7 @@ This log captures CIP header information for every CIP packet and logs it to **c
 | ts                    | time      | Timestamp                                                 |
 | uid                   | string    | Unique ID for this connection                             |
 | id                    | conn_id   | Default Zeek connection info (IP addresses, ports)        |
+| is_orig               | bool      | True if the packet is sent from the originator            |
 | cip_sequence_count    | count     | CIP sequence number                                       |
 | direction             | string    | Request or response                                       |
 | cip_service_code      | string    | CIP service code                                          |
@@ -137,6 +139,7 @@ This log captures CIP I/O (input-output) data for every CIP IO packet and logs i
 | ts                    | time      | Timestamp                                                 |
 | uid                   | string    | Unique ID for this connection                             |
 | id                    | conn_id   | Default Zeek connection info (IP addresses, ports)        |
+| is_orig               | bool      | True if the packet is sent from the originator            |
 | connection_id         | string    | Connection identifier                                     |
 | sequence_number       | count     | Sequence number within connection                         |
 | data_length           | count     | Length of data in io_data field                           |
