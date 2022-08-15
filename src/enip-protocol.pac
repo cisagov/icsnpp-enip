@@ -87,8 +87,8 @@ type ENIP_Originator(command: uint16) = case command of {
     REGISTER_SESSION        -> register_session:        Register_Session;
     UNREGISTER_SESSION      -> unregister_session:      empty;
     LIST_SERVICES           -> list_services:           empty;
-    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data;
-    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data;
+    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(true);
+    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data(true);
     default                 -> unknown:                 bytestring &restofdata;
 };
 
@@ -105,8 +105,8 @@ type ENIP_Target(command: uint16) = case command of {
     REGISTER_SESSION        -> register_session:        Register_Session;
     UNREGISTER_SESSION      -> unregister_session:      empty;
     LIST_SERVICES           -> list_services:           List_Services_Response;
-    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data;
-    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data;
+    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(false);
+    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data(false);
     default                 -> unknown:                 bytestring &restofdata;
 };
 
@@ -163,7 +163,7 @@ type Nop = record {
 ## ------------------------------------------------------------------------------------------------
 type List_Identity_Response = record {
     item_count              : uint16;
-    target_items            : Common_Packet_Format_Item[item_count];
+    target_items            : Common_Packet_Format_Item(false)[item_count];
 } &byteorder=littleendian;
 
 ## ------------------------------------List-Interfaces-Response------------------------------------
@@ -178,7 +178,7 @@ type List_Identity_Response = record {
 ## ------------------------------------------------------------------------------------------------
 type List_Interfaces_Response = record {
     item_count              : uint16;
-    target_items            : Common_Packet_Format_Item[item_count];
+    target_items            : Common_Packet_Format_Item(false)[item_count];
 } &byteorder=littleendian;
 
 ## ----------------------------------------Register-Session----------------------------------------
@@ -209,7 +209,7 @@ type Register_Session = record {
 ## ------------------------------------------------------------------------------------------------
 type List_Services_Response = record {
     item_count              : uint16;
-    target_items            : Common_Packet_Format_Item[item_count];
+    target_items            : Common_Packet_Format_Item(false)[item_count];
 } &byteorder=littleendian;
 
 ## ------------------------------------------Send-RR-Data------------------------------------------
@@ -224,11 +224,11 @@ type List_Services_Response = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items (see Common_Packet_Format_Item)
 ## ------------------------------------------------------------------------------------------------
-type Send_RR_Data = record {
+type Send_RR_Data(is_orig: bool) = record {
     interface_handle        : uint32;
     timeout                 : uint16;
     item_count              : uint16;
-    encap_items             : Common_Packet_Format_Item[item_count];
+    encap_items             : Common_Packet_Format_Item(is_orig)[item_count];
 } &byteorder=littleendian;
 
 ## -----------------------------------------Send-Unit-Data-----------------------------------------
@@ -243,11 +243,11 @@ type Send_RR_Data = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items (see Common_Packet_Format_Item)
 ## ------------------------------------------------------------------------------------------------
-type Send_Unit_Data = record {
+type Send_Unit_Data(is_orig: bool) = record {
     interface_handle        : uint32;
     timeout                 : uint16;
     item_count              : uint16;
-    encap_items             : Common_Packet_Format_Item[item_count];
+    encap_items             : Common_Packet_Format_Item(is_orig)[item_count];
 } &byteorder=littleendian;
 
 ###################################################################################################
@@ -270,7 +270,7 @@ type Send_Unit_Data = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items according to Type ID.
 ## ------------------------------------------------------------------------------------------------
-type Common_Packet_Format_Item = record {
+type Common_Packet_Format_Item(is_orig: bool) = record {
     item_type               : uint16;
     item_length             : uint16;
     item_data               : case item_type of {
@@ -279,13 +279,13 @@ type Common_Packet_Format_Item = record {
         CIP_SECURITY                    -> cip_security_item:               CIP_Security_Item;
         ENIP_CAPABILITY                 -> enip_capability:                 ENIP_Capability_Item;
         CONNECTED_ADDRESS               -> connected_address:               Connected_Address_Item;
-        CONNECTED_TRANSPORT_DATA        -> connected_transport_data:        Connected_Data_Item(item_length);
-        UNCONNECTED_MESSAGE_DATA        -> unconnected_message_data:        Unconnected_Data_Item(item_length);
+        CONNECTED_TRANSPORT_DATA        -> connected_transport_data:        Connected_Data_Item(is_orig, item_length);
+        UNCONNECTED_MESSAGE_DATA        -> unconnected_message_data:        Unconnected_Data_Item(is_orig, item_length);
         LIST_SERVICES_RESPONSE          -> list_services_response:          Service_Item;
         SOCK_ADDR_DATA_ORIG_TO_TARGET   -> sock_addr_data_orig_to_target:   Socket_Address_Info_Item;
         SOCK_ADDR_DATA_TARGET_TO_ORIG   -> sock_addr_data_target_to_orig:   Socket_Address_Info_Item;
         SEQUENCED_ADDRESS_ITEM          -> sequenced_address_item:          Sequenced_Address_Item;
-        UNCONNECTED_MESSAGE_DTLS        -> unconnected_message_dtls:        Unconnected_Message_DTLS(item_length);
+        UNCONNECTED_MESSAGE_DTLS        -> unconnected_message_dtls:        Unconnected_Message_DTLS(is_orig, item_length);
         default                         -> unknown:                         bytestring &restofdata;
     };
 } &byteorder=littleendian;
@@ -450,8 +450,8 @@ type Sequenced_Address_Item = record {
 ## Protocol Parsing:
 ##      Continue with parsing of CIP Data (see CIP_Header)
 ## ------------------------------------------------------------------------------------------------
-type Unconnected_Data_Item(message_size: uint16) = record {
-    unconnected_message     : CIP_Header(0);
+type Unconnected_Data_Item(is_orig: bool, message_size: uint16) = record {
+    unconnected_message     : CIP_Header(is_orig, 0);
 } &byteorder=littleendian;
 
 ## --------------------------------------Connected-Data-Item---------------------------------------
@@ -463,9 +463,9 @@ type Unconnected_Data_Item(message_size: uint16) = record {
 ## Protocol Parsing:
 ##      Continue with parsing of CIP Data (see CIP_Header)
 ## ------------------------------------------------------------------------------------------------
-type Connected_Data_Item(message_size: uint16) = record {
+type Connected_Data_Item(is_orig: bool, message_size: uint16) = record {
     cip_sequence_count      : uint16;
-    transport_packet        : CIP_Header(cip_sequence_count);
+    transport_packet        : CIP_Header(is_orig, cip_sequence_count);
 } &byteorder=littleendian;
 
 ## ------------------------------------Unconnected-Message-DTLS------------------------------------
@@ -480,11 +480,11 @@ type Connected_Data_Item(message_size: uint16) = record {
 ##      Sends unconn_message_type, transaction_number, and status to the unconnected_message_dtls
 ##      event and then continues with parsing of CIP Data (see CIP_Header).
 ## ------------------------------------------------------------------------------------------------
-type Unconnected_Message_DTLS(message_size: uint16) = record {
+type Unconnected_Message_DTLS(is_orig: bool, message_size: uint16) = record {
     unconn_message_type     : uint16;
     transaction_number      : uint32;
     status                  : uint16;
-    unconnected_message     : CIP_Header(0);
+    unconnected_message     : CIP_Header(is_orig, 0);
 } &let {
     deliver: bool = $context.flow.process_unconnected_message_dtls(this);
 } &byteorder=littleendian;
