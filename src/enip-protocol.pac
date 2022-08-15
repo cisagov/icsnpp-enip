@@ -61,7 +61,7 @@ type CIP_IO(is_orig: bool) = record {
     connected_data_length:      uint16;
     connected_data_item:        bytestring &length=connected_data_length;
 } &let {
-    is_orig: bool = is_orig;
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_cip_io(this);
 } &byteorder=littleendian;
 
@@ -132,7 +132,7 @@ type ENIP_Header(is_orig: bool, command: uint16) = record {
     sender_context          : bytestring &length=8;
     options                 : uint32;
 } &let {
-    is_orig: bool = is_orig;
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_enip_header(this);
 } &byteorder=littleendian;
 
@@ -531,7 +531,7 @@ type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
         default                         -> other:                           bytestring &restofdata;
     };
 } &let {
-    is_orig                 : bool = is_orig;
+    is_originator           : bool = is_orig;
     status                  : uint8   = case(service >> 7) of {
         1               -> response_packet.status;
         default         -> 5;

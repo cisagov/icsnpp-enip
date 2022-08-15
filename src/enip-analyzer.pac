@@ -136,7 +136,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_enip_header(connection()->zeek_analyzer(),
                                                     connection()->zeek_analyzer()->Conn(),
-                                                    ${enip_header.is_orig},
+                                                    ${enip_header.is_originator},
                                                     ${enip_header.command},
                                                     ${enip_header.length},
                                                     ${enip_header.session_handle},
@@ -167,7 +167,7 @@ refine flow ENIP_Flow += {
 
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
-                                                   ${cip_header.is_orig},
+                                                   ${cip_header.is_originator},
                                                    ${cip_header.cip_sequence_count},
                                                    ${cip_header.service_code},
                                                    (${cip_header.request_or_response} == 1),
@@ -188,7 +188,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_cip_io(connection()->zeek_analyzer(),
                                                connection()->zeek_analyzer()->Conn(),
-                                               ${cip_io_item.is_orig},
+                                               ${cip_io_item.is_originator},
                                                ${cip_io_item.sequenced_address_item.connection_identifier},
                                                ${cip_io_item.sequenced_address_item.encap_sequence_number},
                                                ${cip_io_item.connected_data_length},
