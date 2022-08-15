@@ -453,6 +453,7 @@ refine flow ENIP_Flow += {
                 // CIP Header event for multiple service packet
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
+                                                   ${data.is_originator},
                                                    ${data.cip_sequence_count},
                                                    MULTIPLE_SERVICE,
                                                    false,
@@ -469,6 +470,7 @@ refine flow ENIP_Flow += {
 
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                        connection()->zeek_analyzer()->Conn(),
+                                                       ${data.is_originator},
                                                        cip_sequence_count,
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        false,
@@ -498,6 +500,7 @@ refine flow ENIP_Flow += {
                 // CIP Header event for multiple service packet
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
+                                                   ${data.is_originator},
                                                    ${data.cip_sequence_count},
                                                    MULTIPLE_SERVICE,
                                                    true,
@@ -513,6 +516,7 @@ refine flow ENIP_Flow += {
 
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                        connection()->zeek_analyzer()->Conn(),
+                                                       ${data.is_originator},
                                                        cip_sequence_count,
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        true,

@@ -524,8 +524,8 @@ type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
         GET_ATTRIBUTE_LIST_RESPONSE     -> get_attribute_list_response:     Get_Attribute_List_Response;
         SET_ATTRIBUTE_LIST              -> set_attribute_list:              Set_Attribute_List_Request;
         SET_ATTRIBUTE_LIST_RESPONSE     -> set_attribute_list_response:     Set_Attribute_List_Response;
-        MULTIPLE_SERVICE                -> multiple_service_request:        Multiple_Service_Packet_Request(cip_sequence_count, request_path);
-        MULTIPLE_SERVICE_RESPONSE       -> multiple_service_response:       Multiple_Service_Packet_Response(cip_sequence_count, response_packet.status);
+        MULTIPLE_SERVICE                -> multiple_service_request:        Multiple_Service_Packet_Request(is_orig, cip_sequence_count, request_path);
+        MULTIPLE_SERVICE_RESPONSE       -> multiple_service_response:       Multiple_Service_Packet_Response(is_orig, cip_sequence_count, response_packet.status);
         GET_ATTRIBUTE_SINGLE_RESPONSE   -> get_attribute_single_response:   Get_Attribute_Single_Response;
         SET_ATTRIBUTE_SINGLE            -> set_attribute_single_request:    Set_Attribute_Single_Request;
         default                         -> other:                           bytestring &restofdata;
@@ -690,11 +690,12 @@ type Set_Attribute_List_Response = record {
 ## Protocol Parsing:
 ##      Sends message data to the multiple_service_request event.
 ## ------------------------------------------------------------------------------------------------
-type Multiple_Service_Packet_Request(cip_sequence_count: uint16, request_path: Request_Path) = record {
+type Multiple_Service_Packet_Request(is_orig: bool, cip_sequence_count: uint16, request_path: Request_Path) = record {
     service_count           : uint16;
     service_offsets         : uint16[service_count];
     services                : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_multiple_service_request(this);
 } &byteorder=littleendian;
 
@@ -710,11 +711,12 @@ type Multiple_Service_Packet_Request(cip_sequence_count: uint16, request_path: R
 ##      Sends message data to the multiple_service_response event.
 ## TODO: edit this function description with updates
 ## ------------------------------------------------------------------------------------------------
-type Multiple_Service_Packet_Response(cip_sequence_count: uint16, status: uint8) = record {
+type Multiple_Service_Packet_Response(is_orig: bool, cip_sequence_count: uint16, status: uint8) = record {
     service_count           : uint16;
     service_offsets         : uint16[service_count];
     services                : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_multiple_service_response(this);
 } &byteorder=littleendian;
 
