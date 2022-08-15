@@ -26,13 +26,13 @@
 type ENIP_PDU(is_orig: bool) = record {
     command:    uint16;
     proto: case command of {
-        2                     -> udp_pdu:                  CIP_IO;
+        2                     -> udp_pdu:                  CIP_IO(is_orig);
         default               -> tcp_pdu:                  ENIP_TCP(is_orig, command);
     };
 } &byteorder=littleendian;
 
 type ENIP_TCP(is_orig: bool, command: uint16) = record {
-    header                  : ENIP_Header(command);
+    header                  : ENIP_Header(is_orig, command);
     body                    : case is_orig of {
         true                -> originator:              ENIP_Originator(command);
         false               -> target:                  ENIP_Target(command);
@@ -53,7 +53,7 @@ type ENIP_TCP(is_orig: bool, command: uint16) = record {
 ##      Starts protocol parsing by getting Ethernet/IP header and passes processing to either
 ##      ENIP_Originator or ENIP_Target depending on is_orig value.
 ## ------------------------------------------------------------------------------------------------
-type CIP_IO = record {
+type CIP_IO(is_orig: bool) = record {
     sequenced_address_type:     uint16; # Always 0x8002
     sequenced_address_length:   uint16; # Always 8
     sequenced_address_item:     Sequenced_Address_Item;
@@ -61,6 +61,7 @@ type CIP_IO = record {
     connected_data_length:      uint16;
     connected_data_item:        bytestring &length=connected_data_length;
 } &let {
+    is_orig: bool = is_orig;
     deliver: bool = $context.flow.process_cip_io(this);
 } &byteorder=littleendian;
 
@@ -123,7 +124,7 @@ type ENIP_Target(command: uint16) = case command of {
 ##      Sends header information to the enip_header event. By default this is then logged to the 
 ##      enip.log file as defined in main.zeek.
 ## ------------------------------------------------------------------------------------------------
-type ENIP_Header(command: uint16) = record {
+type ENIP_Header(is_orig: bool, command: uint16) = record {
     #command                 : uint16;
     length                  : uint16;
     session_handle          : uint32;
@@ -131,6 +132,7 @@ type ENIP_Header(command: uint16) = record {
     sender_context          : bytestring &length=8;
     options                 : uint32;
 } &let {
+    is_orig: bool = is_orig;
     deliver: bool = $context.flow.process_enip_header(this);
 } &byteorder=littleendian;
 
@@ -508,7 +510,7 @@ type Unconnected_Message_DTLS(message_size: uint16) = record {
 ##      Sends CIP header information to the cip_header event and continues on with CIP service 
 ##      parsing. By default, CIP header info is logged to the cip.log file as defined in main.zeek. 
 ## ------------------------------------------------------------------------------------------------
-type CIP_Header(cip_sequence_count: uint16) = record {
+type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
     service                 : uint8;
     request_path            : Request_Path;
     status_code             : case (service >> 7) of {
@@ -529,6 +531,7 @@ type CIP_Header(cip_sequence_count: uint16) = record {
         default                         -> other:                           bytestring &restofdata;
     };
 } &let {
+    is_orig                 : bool = is_orig;
     status                  : uint8   = case(service >> 7) of {
         1               -> response_packet.status;
         default         -> 5;
