@@ -136,6 +136,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_enip_header(connection()->zeek_analyzer(),
                                                     connection()->zeek_analyzer()->Conn(),
+                                                    ${enip_header.is_originator},
                                                     ${enip_header.command},
                                                     ${enip_header.length},
                                                     ${enip_header.session_handle},
@@ -166,6 +167,7 @@ refine flow ENIP_Flow += {
 
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
+                                                   ${cip_header.is_originator},
                                                    ${cip_header.cip_sequence_count},
                                                    ${cip_header.service_code},
                                                    (${cip_header.request_or_response} == 1),
@@ -186,6 +188,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_cip_io(connection()->zeek_analyzer(),
                                                connection()->zeek_analyzer()->Conn(),
+                                               ${cip_io_item.is_originator},
                                                ${cip_io_item.sequenced_address_item.connection_identifier},
                                                ${cip_io_item.sequenced_address_item.encap_sequence_number},
                                                ${cip_io_item.connected_data_length},
@@ -202,19 +205,19 @@ refine flow ENIP_Flow += {
             if ( ::cip_identity )
             {
                 zeek::BifEvent::enqueue_cip_identity(connection()->zeek_analyzer(),
-                                                    connection()->zeek_analyzer()->Conn(),
-                                                    ${identity_item.encapsulation_version},
-                                                    ${identity_item.socket_address.sin_addr},
-                                                    ${identity_item.socket_address.sin_port},
-                                                    ${identity_item.vendor_id},
-                                                    ${identity_item.device_type},
-                                                    ${identity_item.product_code},
-                                                    ${identity_item.revision_major},
-                                                    ${identity_item.revision_minor},
-                                                    ${identity_item.status},
-                                                    ${identity_item.serial_number},
-                                                    to_stringval(${identity_item.product_name}),
-                                                    ${identity_item.state});
+                                                     connection()->zeek_analyzer()->Conn(),
+                                                     ${identity_item.encapsulation_version},
+                                                     ${identity_item.socket_address.sin_addr},
+                                                     ${identity_item.socket_address.sin_port},
+                                                     ${identity_item.vendor_id},
+                                                     ${identity_item.device_type},
+                                                     ${identity_item.product_code},
+                                                     ${identity_item.revision_major},
+                                                     ${identity_item.revision_minor},
+                                                     ${identity_item.status},
+                                                     ${identity_item.serial_number},
+                                                     to_stringval(${identity_item.product_name}),
+                                                     ${identity_item.state});
             }
             return true;
         %}
@@ -450,6 +453,7 @@ refine flow ENIP_Flow += {
                 // CIP Header event for multiple service packet
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
+                                                   ${data.is_originator},
                                                    ${data.cip_sequence_count},
                                                    MULTIPLE_SERVICE,
                                                    false,
@@ -466,6 +470,7 @@ refine flow ENIP_Flow += {
 
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                        connection()->zeek_analyzer()->Conn(),
+                                                       ${data.is_originator},
                                                        cip_sequence_count,
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        false,
@@ -495,6 +500,7 @@ refine flow ENIP_Flow += {
                 // CIP Header event for multiple service packet
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
+                                                   ${data.is_originator},
                                                    ${data.cip_sequence_count},
                                                    MULTIPLE_SERVICE,
                                                    true,
@@ -510,6 +516,7 @@ refine flow ENIP_Flow += {
 
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                        connection()->zeek_analyzer()->Conn(),
+                                                       ${data.is_originator},
                                                        cip_sequence_count,
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        true,

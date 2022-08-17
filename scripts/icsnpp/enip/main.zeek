@@ -23,6 +23,7 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
         enip_command_code       : string    &log;   # Ethernet/IP Command Code (in hex)
         enip_command            : string    &log;   # Ethernet/IP Command Name (see enip_commands)
         length                  : count     &log;   # Length of ENIP data following header
@@ -40,6 +41,7 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
         cip_sequence_count      : count     &log;   # CIP sequence number for transport
         direction               : string    &log;   # Request or Response
         cip_service_code        : string    &log;   # CIP service code (in hex)
@@ -59,6 +61,7 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
         connection_id           : string    &log;   # CIP Connection Identifier
         sequence_number         : count     &log;   # CIP Sequence Number with Connection
         data_length             : count     &log;   # Length of io_data field
@@ -145,6 +148,7 @@ function set_service(c: connection, service: string) {
 #######################  Defines logging of enip_header event -> enip.log  ########################
 ###################################################################################################
 event enip_header(c: connection,
+                  is_orig: bool,
                   command: count,
                   length: count,
                   session_handle: count,
@@ -157,6 +161,7 @@ event enip_header(c: connection,
     enip_item$ts  = network_time();
     enip_item$uid = c$uid;
     enip_item$id  = c$id;
+    enip_item$is_orig  = is_orig;
 
     enip_item$enip_command_code = fmt("0x%02x",command);
     enip_item$enip_command = enip_commands[command];
@@ -173,6 +178,7 @@ event enip_header(c: connection,
 ########################  Defines logging of cip_header event -> cip.log  #########################
 ###################################################################################################
 event cip_header(c: connection,
+                 is_orig: bool,
                  cip_sequence_count: count,
                  service: count,
                  response: bool,
@@ -185,6 +191,7 @@ event cip_header(c: connection,
     cip_header_item$ts  = network_time();
     cip_header_item$uid = c$uid;
     cip_header_item$id  = c$id;
+    cip_header_item$is_orig  = is_orig;
 
     if (cip_sequence_count != 0)
         cip_header_item$cip_sequence_count = cip_sequence_count;
@@ -218,6 +225,7 @@ event cip_header(c: connection,
 #########################  Defines logging of cip_io event -> cip_io.log  #########################
 ###################################################################################################
 event cip_io(c: connection,
+             is_orig: bool,
              connection_identifier: count,
              sequence_number: count,
              data_length: count,
@@ -228,6 +236,7 @@ event cip_io(c: connection,
     cip_io_item$ts  = network_time();
     cip_io_item$uid = c$uid;
     cip_io_item$id  = c$id;
+    cip_io_item$is_orig  = is_orig;
     cip_io_item$connection_id = fmt("0x%08x", connection_identifier);;
     cip_io_item$sequence_number = sequence_number;
     cip_io_item$data_length = data_length;
