@@ -110,21 +110,24 @@ This log captures CIP header information for every CIP packet and logs it to **c
 
 #### Fields Captured
 
-| Field                 | Type      | Description                                               |
-| --------------------- |-----------|-----------------------------------------------------------|
-| ts                    | time      | Timestamp                                                 |
-| uid                   | string    | Unique ID for this connection                             |
-| id                    | conn_id   | Default Zeek connection info (IP addresses, ports)        |
-| is_orig               | bool      | True if the packet is sent from the originator            |
-| cip_sequence_count    | count     | CIP sequence number                                       |
-| direction             | string    | Request or response                                       |
-| cip_service_code      | string    | CIP service code                                          |
-| cip_service           | string    | CIP service name                                          |
-| cip_status            | string    | CIP status code                                           |
-| class_id              | string    | CIP request path - class ID                               |
-| class_name            | string    | CIP request path - class name                             |
-| instance_id           | string    | CIP request path - instance ID                            |
-| attribute_id          | string    | CIP request path - attribute ID                           |
+| Field                     | Type      | Description                                               |
+| ------------------------- |-----------|-----------------------------------------------------------|
+| ts                        | time      | Timestamp                                                 |
+| uid                       | string    | Unique ID for this connection                             |
+| id                        | conn_id   | Default Zeek connection info (IP addresses, ports)        |
+| is_orig                   | bool      | True if the packet is sent from the originator            |
+| cip_sequence_count        | count     | CIP sequence number                                       |
+| direction                 | string    | Request or response                                       |
+| cip_service_code          | string    | CIP service code                                          |
+| cip_service               | string    | CIP service name                                          |
+| cip_status_code           | string    | CIP status code                                           |
+| cip_status                | string    | CIP status name                                           |
+| cip_extended_status_code  | string    | CIP extended status code                                  |
+| cip_extended_status       | string    | CIP extended status name                                  |
+| class_id                  | string    | CIP request path - class ID                               |
+| class_name                | string    | CIP request path - class name                             |
+| instance_id               | string    | CIP request path - instance ID                            |
+| attribute_id              | string    | CIP request path - attribute ID                           |
 
 ### CIP I/O Log (cip_io.log)
 

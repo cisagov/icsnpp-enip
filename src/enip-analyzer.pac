@@ -20,6 +20,8 @@
 
     }CIP_Request_Path;
 
+
+    uint32 get_unsigned(const_bytestring data);
     uint32 get_number(uint8 size, uint8 x, const_bytestring data);
     CIP_Request_Path parse_request_path(const_bytestring data);
     CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint16 starting_location);
@@ -27,6 +29,24 @@
 %}
 
 %code{
+
+    // Get uint32 number from status_extended array
+    uint32 get_unsigned(const_bytestring data)
+    {
+        if(data.length() == 0)
+        {
+            return UINT32_MAX;
+        }
+        uint32 number = 0;
+        for ( int32 i = 0; i < data.length(); ++i ){
+            number <<= 8;
+            number |= data[i];
+
+            if ( i == 3 )
+                return number;
+        }
+        return number;
+    }
 
     // Get uint32 number from data in request path
     uint32 get_number(uint8 size, uint16 x, const_bytestring data)
@@ -160,10 +180,18 @@ refine flow ENIP_Flow += {
                 if(${cip_header.service_code} == MULTIPLE_SERVICE)
                     return true;
 
+                uint32 status = UINT32_MAX;
+                uint32 status_extended = UINT32_MAX;
                 CIP_Request_Path request_path;
 
-                if(${cip_header.request_or_response} != 1)
+                if(${cip_header.request_or_response} == 1)
+                {
+                    status = ${cip_header.response_packet.status};
+                    status_extended = get_unsigned(${cip_header.response_packet.status_extended});
+                }else
+                {
                     request_path = parse_request_path(${cip_header.request_path.request_path});
+                }
 
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
@@ -171,7 +199,8 @@ refine flow ENIP_Flow += {
                                                    ${cip_header.cip_sequence_count},
                                                    ${cip_header.service_code},
                                                    (${cip_header.request_or_response} == 1),
-                                                   ${cip_header.status},
+                                                   status,
+                                                   status_extended,
                                                    request_path.class_id,
                                                    request_path.instance_id,
                                                    request_path.attribute_id);
@@ -457,7 +486,8 @@ refine flow ENIP_Flow += {
                                                    ${data.cip_sequence_count},
                                                    MULTIPLE_SERVICE,
                                                    false,
-                                                   0,
+                                                   UINT32_MAX,
+                                                   UINT32_MAX,
                                                    request_path.class_id,
                                                    request_path.instance_id,
                                                    request_path.attribute_id);
@@ -474,7 +504,8 @@ refine flow ENIP_Flow += {
                                                        cip_sequence_count,
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        false,
-                                                       0,
+                                                       UINT32_MAX,
+                                                       UINT32_MAX,
                                                        request_path.class_id,
                                                        request_path.instance_id,
                                                        request_path.attribute_id);
@@ -505,6 +536,7 @@ refine flow ENIP_Flow += {
                                                    MULTIPLE_SERVICE,
                                                    true,
                                                    ${data.status},
+                                                   get_unsigned(${data.status_extended}),
                                                    request_path.class_id,
                                                    request_path.instance_id,
                                                    request_path.attribute_id);
@@ -521,6 +553,7 @@ refine flow ENIP_Flow += {
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        true,
                                                        ${data.services[service_packet_location + 2]},
+                                                       UINT32_MAX,
                                                        request_path.class_id,
                                                        request_path.instance_id,
                                                        request_path.attribute_id);

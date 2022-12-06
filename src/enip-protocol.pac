@@ -525,17 +525,13 @@ type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
         SET_ATTRIBUTE_LIST              -> set_attribute_list:              Set_Attribute_List_Request;
         SET_ATTRIBUTE_LIST_RESPONSE     -> set_attribute_list_response:     Set_Attribute_List_Response;
         MULTIPLE_SERVICE                -> multiple_service_request:        Multiple_Service_Packet_Request(is_orig, cip_sequence_count, request_path);
-        MULTIPLE_SERVICE_RESPONSE       -> multiple_service_response:       Multiple_Service_Packet_Response(is_orig, cip_sequence_count, response_packet.status);
+        MULTIPLE_SERVICE_RESPONSE       -> multiple_service_response:       Multiple_Service_Packet_Response(is_orig, cip_sequence_count, response_packet.status, response_packet.status_extended);
         GET_ATTRIBUTE_SINGLE_RESPONSE   -> get_attribute_single_response:   Get_Attribute_Single_Response;
         SET_ATTRIBUTE_SINGLE            -> set_attribute_single_request:    Set_Attribute_Single_Request;
         default                         -> other:                           bytestring &restofdata;
     };
 } &let {
     is_originator           : bool = is_orig;
-    status                  : uint8   = case(service >> 7) of {
-        1               -> response_packet.status;
-        default         -> 5;
-    };
     request_or_response     : uint8 = (service >> 7);
     service_code            : uint8 = (service & 0x7f);
     deliver: bool = $context.flow.process_cip_header(this);
@@ -547,14 +543,14 @@ type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
 ## Message Format:
 ##      - Status:                   uint8               -> CIP status code
 ##      - Status Extra:             uint8               -> Size of extended status
-##      - Extended Status:          uint8[]             -> CIP extended status code
+##      - Extended Status:          variable            -> CIP extended status code
 ## Protocol Parsing:
 ##      Continues with parsing of CIP data
 ## ------------------------------------------------------------------------------------------------
 type CIP_Status = record {
     status                  : uint8;
     status_extra            : uint8;
-    status_extended         : uint8[status_extra];
+    status_extended         : bytestring &length = status_extra;
 } &byteorder=littleendian;
 
 ## ------------------------------------------Request-Path------------------------------------------
@@ -711,7 +707,7 @@ type Multiple_Service_Packet_Request(is_orig: bool, cip_sequence_count: uint16, 
 ##      Sends message data to the multiple_service_response event.
 ## TODO: edit this function description with updates
 ## ------------------------------------------------------------------------------------------------
-type Multiple_Service_Packet_Response(is_orig: bool, cip_sequence_count: uint16, status: uint8) = record {
+type Multiple_Service_Packet_Response(is_orig: bool, cip_sequence_count: uint16, status: uint8, status_extended: bytestring) = record {
     service_count           : uint16;
     service_offsets         : uint16[service_count];
     services                : bytestring &restofdata;

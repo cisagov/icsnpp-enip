@@ -38,19 +38,22 @@ export{
     ###################################  CIP_Header -> cip.log  ###################################
     ###############################################################################################
     type CIP_Header: record {
-        ts                      : time      &log;   # Timestamp of event
-        uid                     : string    &log;   # Zeek unique ID for connection
-        id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
-        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
-        cip_sequence_count      : count     &log;   # CIP sequence number for transport
-        direction               : string    &log;   # Request or Response
-        cip_service_code        : string    &log;   # CIP service code (in hex)
-        cip_service             : string    &log;   # CIP service name (see cip_services)
-        cip_status              : string    &log;   # CIP status code (see cip_statuses)
-        class_id                : string    &log;   # CIP Request Path - Class ID
-        class_name              : string    &log;   # CIP Request Path - Class Name (see cip_classes)
-        instance_id             : string    &log;   # CIP Request Path - Instance ID
-        attribute_id            : string    &log;   # CIP Request Path - Attribute ID
+        ts                          : time      &log;   # Timestamp of event
+        uid                         : string    &log;   # Zeek unique ID for connection
+        id                          : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        is_orig                     : bool      &log;   # the message came from the originator/client or the responder/server
+        cip_sequence_count          : count     &log;   # CIP sequence number for transport
+        direction                   : string    &log;   # Request or Response
+        cip_service_code            : string    &log;   # CIP service code (in hex)
+        cip_service                 : string    &log;   # CIP service name (see cip_services)
+        cip_status_code             : string    &log;   # CIP status code (in hex)
+        cip_status                  : string    &log;   # CIP status description (see cip_statuses)
+        cip_extended_status_code    : string    &log;   # CIP extended status code (in hex)
+        cip_extended_status         : string    &log;   # CIP extended status description (see cip_extended_statuses)
+        class_id                    : string    &log;   # CIP Request Path - Class ID
+        class_name                  : string    &log;   # CIP Request Path - Class Name (see cip_classes)
+        instance_id                 : string    &log;   # CIP Request Path - Instance ID
+        attribute_id                : string    &log;   # CIP Request Path - Attribute ID
     };
     global log_cip: event(rec: CIP_Header);
 
@@ -182,7 +185,9 @@ event cip_header(c: connection,
                  cip_sequence_count: count,
                  service: count,
                  response: bool,
-                 status: count, class_id: count,
+                 status: count,
+                 status_extended: count,
+                 class_id: count,
                  instance_id: count,
                  attribute_id: count){
 
@@ -199,10 +204,22 @@ event cip_header(c: connection,
     cip_header_item$cip_service_code = fmt("0x%02x",service);
     cip_header_item$cip_service = cip_services[service];
 
-    if(response){
+    if(response)
+    {
         cip_header_item$direction = "response";
-        cip_header_item$cip_status = cip_statuses[status];
-    }else{
+        if (status != UINT32_MAX )
+        {
+            cip_header_item$cip_status_code = fmt("0x%02x", status);
+            cip_header_item$cip_status = cip_statuses[status];
+        }
+
+        if (status_extended != UINT32_MAX )
+        {
+            cip_header_item$cip_extended_status_code = fmt("0x%04x", status_extended);
+            cip_header_item$cip_extended_status = cip_extended_status[status_extended];
+        }
+    }else
+    {
         cip_header_item$direction = "request";
 
         if(class_id != UINT32_MAX){

@@ -43,7 +43,6 @@ namespace zeek::analyzer::enip {
       }
       catch(const binpac::Exception& e)
       {
-          ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
       }
   }
 
@@ -79,7 +78,6 @@ namespace zeek::analyzer::enip {
       }
       catch ( const binpac::Exception& e )
       {
-          ProtocolViolation(zeek::util::fmt("Binpac exception: %s", e.c_msg()));
       }
   }
 }

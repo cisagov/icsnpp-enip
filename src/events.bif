@@ -43,18 +43,20 @@ event enip_header%(c: connection,
 ##      - service:              count       -> CIP Service Type (see cip_services in consts.zeek)
 ##      - response:             bool        -> Request or Response boolean
 ##      - status:               count       -> CIP Status Code (see cip_statuses in consts.zeek) 
+##      - status_extended:      count       -> CIP Status Code (see cip_extended_statuses in consts.zeek) 
 ##      - class_id              count       -> CIP Request Path - Class ID
 ##      - instance_id           count       -> CIP Request Path - Instance ID
 ##      - attribute_id          count       -> CIP Request Path - Attribute ID
 ## Default Output:
 ##      Writes to log file cip.log
 ## ------------------------------------------------------------------------------------------------
-event cip_header%(c: connection, 
+event cip_header%(c: connection,
                   is_orig: bool,
-                  cip_sequence_count: count, 
-                  service: count, 
-                  response: bool, 
+                  cip_sequence_count: count,
+                  service: count,
+                  response: bool,
                   status: count,
+                  status_extended: count,
                   class_id: count,
                   instance_id: count,
                   attribute_id: count%);
