@@ -134,9 +134,6 @@ event zeek_init() &priority=5 {
     Log::create_stream(ENIP::LOG_CIP_IDENTITY, [$columns=CIP_Identity_Item_Log,
                                                 $ev=log_cip_identity,
                                                 $path="cip_identity"]);
-
-    Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
-    Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
 }
 
 ###################################################################################################
