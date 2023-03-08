@@ -109,6 +109,11 @@ const udp_ports = {
     44818/udp,
 };
 
+# Defines Implicit UDP ENIP/CIP I/O ports
+const udp_implicit_ports = {
+    2222/udp,
+};
+
 # Defines ENIP/CIP TCP ports
 const tcp_ports = {
     44818/tcp,
@@ -134,6 +139,10 @@ event zeek_init() &priority=5 {
     Log::create_stream(ENIP::LOG_CIP_IDENTITY, [$columns=CIP_Identity_Item_Log,
                                                 $ev=log_cip_identity,
                                                 $path="cip_identity"]);
+    #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
+    #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
+    # Monitor only the UDP Port assigned to implicit ENIP/CIP IO Messages
+    Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_implicit_ports);
 }
 
 ###################################################################################################
