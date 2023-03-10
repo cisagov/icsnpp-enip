@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Battelle Energy Alliance, LLC.  All rights reserved.
+// Copyright (c) 2023 Battelle Energy Alliance, LLC.  All rights reserved.
 
 #include "ENIP.h"
 #include <zeek/analyzer/protocol/tcp/TCP_Reassembler.h>
