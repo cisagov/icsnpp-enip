@@ -34,8 +34,11 @@ namespace zeek::analyzer::enip {
   {
       analyzer::tcp::TCP_ApplicationAnalyzer::DeliverStream(len, data, orig);
       assert(TCP());
-      if(had_gap)
-          return;
+      
+      // Commenting out the two lines below to retain ENIP logging when [TCP ACKed unseen segment]
+      // or [TCP Retransmission] packets are sent which results in a TCP gap
+      // if(had_gap)
+      //   return;
 
       try
       {
@@ -43,6 +46,13 @@ namespace zeek::analyzer::enip {
       }
       catch(const binpac::Exception& e)
       {
+          #if ZEEK_VERSION_NUMBER < 40200
+          ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+
+          #else
+          AnalyzerViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+
+          #endif
       }
   }
 
@@ -78,6 +88,13 @@ namespace zeek::analyzer::enip {
       }
       catch ( const binpac::Exception& e )
       {
+          #if ZEEK_VERSION_NUMBER < 40200
+          ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+
+          #else
+          AnalyzerViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+
+          #endif
       }
   }
 }
