@@ -275,7 +275,7 @@ type Common_Packet_Format_Item(is_orig: bool) = record {
     item_length             : uint16;
     item_data               : case item_type of {
         NULL_ADDRESS                    -> null_address:                    empty;
-        CIP_IDENTITY                    -> cip_identity_item:               CIP_Identity_Item;
+        CIP_IDENTITY                    -> cip_identity_item:               CIP_Identity_Item(is_orig);
         CIP_SECURITY                    -> cip_security_item:               CIP_Security_Item;
         ENIP_CAPABILITY                 -> enip_capability:                 ENIP_Capability_Item;
         CONNECTED_ADDRESS               -> connected_address:               Connected_Address_Item;
@@ -311,7 +311,7 @@ type Common_Packet_Format_Item(is_orig: bool) = record {
 ##      Sends all variables to the cip_identity event. By default this is then logged to the 
 ##      cip_identity.log file as defined in main.zeek.
 ## ------------------------------------------------------------------------------------------------
-type CIP_Identity_Item = record {
+type CIP_Identity_Item(is_orig: bool) = record {
     encapsulation_version   : uint16;
     socket_address          : Socket_Address_Info_Item;
     vendor_id               : uint16;
@@ -325,6 +325,7 @@ type CIP_Identity_Item = record {
     product_name            : bytestring &length=(product_name_length);
     state                   : uint8;
 } &let {
+    is_originator           : bool = is_orig;
     deliver: bool = $context.flow.process_cip_identity_item(this);
 } &byteorder=littleendian;
 

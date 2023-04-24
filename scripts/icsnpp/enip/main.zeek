@@ -23,6 +23,10 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        source_h                : addr      &log;   # Source IP Address
+        source_p                : port      &log;   # Source Port
+        destination_h           : addr      &log;   # Destination IP Address
+        destination_p           : port      &log;   # Destination Port
         is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
         enip_command_code       : string    &log;   # Ethernet/IP Command Code (in hex)
         enip_command            : string    &log;   # Ethernet/IP Command Name (see enip_commands)
@@ -41,6 +45,10 @@ export{
         ts                          : time      &log;   # Timestamp of event
         uid                         : string    &log;   # Zeek unique ID for connection
         id                          : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        source_h                    : addr      &log;   # Source IP Address
+        source_p                    : port      &log;   # Source Port
+        destination_h               : addr      &log;   # Destination IP Address
+        destination_p               : port      &log;   # Destination Port
         is_orig                     : bool      &log;   # the message came from the originator/client or the responder/server
         cip_sequence_count          : count     &log;   # CIP sequence number for transport
         direction                   : string    &log;   # Request or Response
@@ -64,6 +72,10 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        source_h                : addr      &log;   # Source IP Address
+        source_p                : port      &log;   # Source Port
+        destination_h           : addr      &log;   # Destination IP Address
+        destination_p           : port      &log;   # Destination Port
         is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
         connection_id           : string    &log;   # CIP Connection Identifier
         sequence_number         : count     &log;   # CIP Sequence Number with Connection
@@ -79,6 +91,11 @@ export{
         ts                      : time      &log;   # Timestamp of event
         uid                     : string    &log;   # Zeek unique ID for connection
         id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
+        source_h                : addr      &log;   # Source IP Address
+        source_p                : port      &log;   # Source Port
+        destination_h           : addr      &log;   # Destination IP Address
+        destination_p           : port      &log;   # Destination Port
+        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
         encapsulation_version   : count     &log;   # Encapsulation protocol version supported
         socket_address          : addr      &log;   # Socket address IP address
         socket_port             : count     &log;   # Socket address port number
@@ -172,6 +189,20 @@ event enip_header(c: connection,
     enip_item$id  = c$id;
     enip_item$is_orig  = is_orig;
 
+    if(is_orig)
+    {
+        enip_item$source_h = c$id$orig_h;
+        enip_item$source_p = c$id$orig_p;
+        enip_item$destination_h = c$id$resp_h;
+        enip_item$destination_p = c$id$resp_p;
+    }else
+    {
+        enip_item$source_h = c$id$resp_h;
+        enip_item$source_p = c$id$resp_p;
+        enip_item$destination_h = c$id$orig_h;
+        enip_item$destination_p = c$id$orig_p;
+    }
+
     enip_item$enip_command_code = fmt("0x%02x",command);
     enip_item$enip_command = enip_commands[command];
     enip_item$length = length;
@@ -203,6 +234,20 @@ event cip_header(c: connection,
     cip_header_item$uid = c$uid;
     cip_header_item$id  = c$id;
     cip_header_item$is_orig  = is_orig;
+
+    if(is_orig)
+    {
+        cip_header_item$source_h = c$id$orig_h;
+        cip_header_item$source_p = c$id$orig_p;
+        cip_header_item$destination_h = c$id$resp_h;
+        cip_header_item$destination_p = c$id$resp_p;
+    }else
+    {
+        cip_header_item$source_h = c$id$resp_h;
+        cip_header_item$source_p = c$id$resp_p;
+        cip_header_item$destination_h = c$id$orig_h;
+        cip_header_item$destination_p = c$id$orig_p;
+    }
 
     if (cip_sequence_count != 0)
         cip_header_item$cip_sequence_count = cip_sequence_count;
@@ -260,6 +305,21 @@ event cip_io(c: connection,
     cip_io_item$uid = c$uid;
     cip_io_item$id  = c$id;
     cip_io_item$is_orig  = is_orig;
+
+    if(is_orig)
+    {
+        cip_io_item$source_h = c$id$orig_h;
+        cip_io_item$source_p = c$id$orig_p;
+        cip_io_item$destination_h = c$id$resp_h;
+        cip_io_item$destination_p = c$id$resp_p;
+    }else
+    {
+        cip_io_item$source_h = c$id$resp_h;
+        cip_io_item$source_p = c$id$resp_p;
+        cip_io_item$destination_h = c$id$orig_h;
+        cip_io_item$destination_p = c$id$orig_p;
+    }
+
     cip_io_item$connection_id = fmt("0x%08x", connection_identifier);;
     cip_io_item$sequence_number = sequence_number;
     cip_io_item$data_length = data_length;
@@ -271,7 +331,9 @@ event cip_io(c: connection,
 ###################################################################################################
 ###################  Defines logging of cip_identity event -> cip_identity.log  ###################
 ###################################################################################################
-event cip_identity(c: connection, encapsulation_version: count,
+event cip_identity(c: connection,
+                   is_orig: bool,
+                   encapsulation_version: count,
                    socket_address: count,
                    socket_port: count,
                    vendor_id: count,
@@ -289,6 +351,22 @@ event cip_identity(c: connection, encapsulation_version: count,
     cip_identity_item$ts  = network_time();
     cip_identity_item$uid = c$uid;
     cip_identity_item$id  = c$id;
+    cip_identity_item$is_orig  = is_orig;
+
+    if(is_orig)
+    {
+        cip_identity_item$source_h = c$id$orig_h;
+        cip_identity_item$source_p = c$id$orig_p;
+        cip_identity_item$destination_h = c$id$resp_h;
+        cip_identity_item$destination_p = c$id$resp_p;
+    }else
+    {
+        cip_identity_item$source_h = c$id$resp_h;
+        cip_identity_item$source_p = c$id$resp_p;
+        cip_identity_item$destination_h = c$id$orig_h;
+        cip_identity_item$destination_p = c$id$orig_p;
+    }
+
     cip_identity_item$encapsulation_version = encapsulation_version;
     cip_identity_item$socket_address = count_to_v4_addr(socket_address);
     cip_identity_item$socket_port = socket_port;

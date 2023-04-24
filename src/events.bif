@@ -82,6 +82,7 @@ event cip_header%(c: connection,
 ##      Writes to log file cip_identity.log
 ## ------------------------------------------------------------------------------------------------
 event cip_identity%(c: connection, 
+                    is_orig: bool,
                     encapsulation_version: count, 
                     socket_address: count, 
                     socket_port: count, 

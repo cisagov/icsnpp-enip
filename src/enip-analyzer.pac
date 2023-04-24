@@ -235,6 +235,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_cip_identity(connection()->zeek_analyzer(),
                                                      connection()->zeek_analyzer()->Conn(),
+                                                     ${identity_item.is_originator},
                                                      ${identity_item.encapsulation_version},
                                                      ${identity_item.socket_address.sin_addr},
                                                      ${identity_item.socket_address.sin_port},
