@@ -390,7 +390,7 @@ type Socket_Address_Info_Item = record {
     sin_zero                : uint8[8];
 } &let {
     deliver: bool = $context.flow.process_socket_address_info(this);
-} &byteorder=littleendian;
+} &byteorder=bigendian;
 
 ## ------------------------------------------Service-Item------------------------------------------
 ## Message Description:
