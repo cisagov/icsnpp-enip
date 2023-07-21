@@ -56,7 +56,7 @@ type ENIP_TCP(is_orig: bool, command: uint16) = record {
 type CIP_IO(is_orig: bool) = record {
     sequenced_address_type:     uint16; # Always 0x8002
     sequenced_address_length:   uint16; # Always 8
-    sequenced_address_item:     Sequenced_Address_Item;
+    sequenced_address_item:     Sequenced_Address_Item(is_orig);
     connected_data_type:        uint16; # Always 0x00B1
     connected_data_length:      uint16;
     connected_data_item:        bytestring &length=connected_data_length;
@@ -84,7 +84,7 @@ type ENIP_Originator(command: uint16) = case command of {
     NOP                     -> nop:                     Nop;
     LIST_IDENTITY           -> list_identity:           empty;
     LIST_INTERFACES         -> list_interfaces:         empty;
-    REGISTER_SESSION        -> register_session:        Register_Session;
+    REGISTER_SESSION        -> register_session:        Register_Session(true);
     UNREGISTER_SESSION      -> unregister_session:      empty;
     LIST_SERVICES           -> list_services:           empty;
     SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(true);
@@ -102,7 +102,7 @@ type ENIP_Target(command: uint16) = case command of {
     NOP                     -> nop:                     Nop;
     LIST_IDENTITY           -> list_identity:           List_Identity_Response;
     LIST_INTERFACES         -> list_interfaces:         List_Interfaces_Response;
-    REGISTER_SESSION        -> register_session:        Register_Session;
+    REGISTER_SESSION        -> register_session:        Register_Session(false);
     UNREGISTER_SESSION      -> unregister_session:      empty;
     LIST_SERVICES           -> list_services:           List_Services_Response;
     SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(false);
@@ -190,10 +190,11 @@ type List_Interfaces_Response = record {
 ## Protocol Parsing:
 ##      Sends protocol version and options flag to the register_session event
 ## ------------------------------------------------------------------------------------------------
-type Register_Session = record {
+type Register_Session(is_orig: bool) = record {
     protocol_version        : uint16;
     options_flags           : uint16;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_register_session(this);
 } &byteorder=littleendian;
 
@@ -275,16 +276,16 @@ type Common_Packet_Format_Item(is_orig: bool) = record {
     item_length             : uint16;
     item_data               : case item_type of {
         NULL_ADDRESS                    -> null_address:                    empty;
-        CIP_IDENTITY                    -> cip_identity_item:               CIP_Identity_Item;
-        CIP_SECURITY                    -> cip_security_item:               CIP_Security_Item;
-        ENIP_CAPABILITY                 -> enip_capability:                 ENIP_Capability_Item;
-        CONNECTED_ADDRESS               -> connected_address:               Connected_Address_Item;
+        CIP_IDENTITY                    -> cip_identity_item:               CIP_Identity_Item(is_orig);
+        CIP_SECURITY                    -> cip_security_item:               CIP_Security_Item(is_orig);
+        ENIP_CAPABILITY                 -> enip_capability:                 ENIP_Capability_Item(is_orig);
+        CONNECTED_ADDRESS               -> connected_address:               Connected_Address_Item(is_orig);
         CONNECTED_TRANSPORT_DATA        -> connected_transport_data:        Connected_Data_Item(is_orig, item_length);
         UNCONNECTED_MESSAGE_DATA        -> unconnected_message_data:        Unconnected_Data_Item(is_orig, item_length);
-        LIST_SERVICES_RESPONSE          -> list_services_response:          Service_Item;
-        SOCK_ADDR_DATA_ORIG_TO_TARGET   -> sock_addr_data_orig_to_target:   Socket_Address_Info_Item;
-        SOCK_ADDR_DATA_TARGET_TO_ORIG   -> sock_addr_data_target_to_orig:   Socket_Address_Info_Item;
-        SEQUENCED_ADDRESS_ITEM          -> sequenced_address_item:          Sequenced_Address_Item;
+        LIST_SERVICES_RESPONSE          -> list_services_response:          Service_Item(is_orig);
+        SOCK_ADDR_DATA_ORIG_TO_TARGET   -> sock_addr_data_orig_to_target:   Socket_Address_Info_Item(is_orig);
+        SOCK_ADDR_DATA_TARGET_TO_ORIG   -> sock_addr_data_target_to_orig:   Socket_Address_Info_Item(is_orig);
+        SEQUENCED_ADDRESS_ITEM          -> sequenced_address_item:          Sequenced_Address_Item(is_orig);
         UNCONNECTED_MESSAGE_DTLS        -> unconnected_message_dtls:        Unconnected_Message_DTLS(is_orig, item_length);
         default                         -> unknown:                         bytestring &restofdata;
     };
@@ -311,9 +312,9 @@ type Common_Packet_Format_Item(is_orig: bool) = record {
 ##      Sends all variables to the cip_identity event. By default this is then logged to the 
 ##      cip_identity.log file as defined in main.zeek.
 ## ------------------------------------------------------------------------------------------------
-type CIP_Identity_Item = record {
+type CIP_Identity_Item(is_orig: bool) = record {
     encapsulation_version   : uint16;
-    socket_address          : Socket_Address_Info_Item;
+    socket_address          : Socket_Address_Info_Item(is_orig);
     vendor_id               : uint16;
     device_type             : uint16;
     product_code            : uint16;
@@ -325,6 +326,7 @@ type CIP_Identity_Item = record {
     product_name            : bytestring &length=(product_name_length);
     state                   : uint8;
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_cip_identity_item(this);
 } &byteorder=littleendian;
 
@@ -347,12 +349,13 @@ type CIP_Identity_Item = record {
 ## Protocol Parsing:
 ##      Sends all variables to the cip_security event.
 ## ------------------------------------------------------------------------------------------------
-type CIP_Security_Item = record {
+type CIP_Security_Item(is_orig: bool) = record {
     security_profile        : uint16;
     cip_security_state      : uint8;
     enip_security_state     : uint8;
     iana_port_state         : int8;
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_cip_security_item(this);
 } &byteorder=littleendian;
 
@@ -365,9 +368,10 @@ type CIP_Security_Item = record {
 ## Protocol Parsing:
 ##      Sends enip_profile to the enip_capability event.
 ## ------------------------------------------------------------------------------------------------
-type ENIP_Capability_Item = record {
+type ENIP_Capability_Item(is_orig: bool) = record {
     enip_profile            : uint32;
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_enip_capability_item(this);
 } &byteorder=littleendian;
 
@@ -383,12 +387,13 @@ type ENIP_Capability_Item = record {
 ## Protocol Parsing:
 ##      Sends sin_addr and sin_port to the socket_address_info event
 ## ------------------------------------------------------------------------------------------------
-type Socket_Address_Info_Item = record {
+type Socket_Address_Info_Item(is_orig: bool) = record {
     sin_family              : int16;
     sin_port                : uint16;
     sin_addr                : uint32;
     sin_zero                : uint8[8];
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_socket_address_info(this);
 } &byteorder=bigendian;
 
@@ -402,11 +407,12 @@ type Socket_Address_Info_Item = record {
 ## Protocol Parsing:
 ##      Sends protocol_version, capability_flags, and service_name to enip_service event
 ## ------------------------------------------------------------------------------------------------
-type Service_Item = record {
+type Service_Item(is_orig: bool) = record {
     protocol_version        : uint16;
     capability_flags        : uint16;
     service_name            : bytestring &length=16;
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_service_item(this);
 } &byteorder=littleendian;
 
@@ -419,9 +425,10 @@ type Service_Item = record {
 ## Protocol Parsing:
 ##      Sends connection_identifier to the connected_address event
 ## ------------------------------------------------------------------------------------------------
-type Connected_Address_Item = record {
+type Connected_Address_Item(is_orig: bool) = record {
     connection_identifier   : uint32;
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_connected_address_item(this);
 } &byteorder=littleendian;
 
@@ -435,10 +442,11 @@ type Connected_Address_Item = record {
 ## Protocol Parsing:
 ##      Sends connection_identifier and encap_sequence_number to the sequenced_address event
 ## ------------------------------------------------------------------------------------------------
-type Sequenced_Address_Item = record {
+type Sequenced_Address_Item(is_orig: bool) = record {
     connection_identifier   : uint32;
     encap_sequence_number   : uint32;
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_sequenced_address_item(this);
 } &byteorder=littleendian;
 
@@ -486,6 +494,7 @@ type Unconnected_Message_DTLS(is_orig: bool, message_size: uint16) = record {
     status                  : uint16;
     unconnected_message     : CIP_Header(is_orig, 0);
 } &let {
+    is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_unconnected_message_dtls(this);
 } &byteorder=littleendian;
 
@@ -519,15 +528,15 @@ type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
     };
     data                    : case service of {
         GET_ATTRIBUTES_ALL              -> get_attributes_all_request:      empty;
-        GET_ATTRIBUTES_ALL_RESPONSE     -> get_attributes_all_response:     Get_Attributes_All_Response;
-        GET_ATTRIBUTE_LIST              -> get_attribute_list:              Get_Attribute_List_Request;
-        GET_ATTRIBUTE_LIST_RESPONSE     -> get_attribute_list_response:     Get_Attribute_List_Response;
-        SET_ATTRIBUTE_LIST              -> set_attribute_list:              Set_Attribute_List_Request;
-        SET_ATTRIBUTE_LIST_RESPONSE     -> set_attribute_list_response:     Set_Attribute_List_Response;
+        GET_ATTRIBUTES_ALL_RESPONSE     -> get_attributes_all_response:     Get_Attributes_All_Response(is_orig);
+        GET_ATTRIBUTE_LIST              -> get_attribute_list:              Get_Attribute_List_Request(is_orig);
+        GET_ATTRIBUTE_LIST_RESPONSE     -> get_attribute_list_response:     Get_Attribute_List_Response(is_orig);
+        SET_ATTRIBUTE_LIST              -> set_attribute_list:              Set_Attribute_List_Request(is_orig);
+        SET_ATTRIBUTE_LIST_RESPONSE     -> set_attribute_list_response:     Set_Attribute_List_Response(is_orig);
         MULTIPLE_SERVICE                -> multiple_service_request:        Multiple_Service_Packet_Request(is_orig, cip_sequence_count, request_path);
         MULTIPLE_SERVICE_RESPONSE       -> multiple_service_response:       Multiple_Service_Packet_Response(is_orig, cip_sequence_count, response_packet.status, response_packet.status_extended);
-        GET_ATTRIBUTE_SINGLE_RESPONSE   -> get_attribute_single_response:   Get_Attribute_Single_Response;
-        SET_ATTRIBUTE_SINGLE            -> set_attribute_single_request:    Set_Attribute_Single_Request;
+        GET_ATTRIBUTE_SINGLE_RESPONSE   -> get_attribute_single_response:   Get_Attribute_Single_Response(is_orig);
+        SET_ATTRIBUTE_SINGLE            -> set_attribute_single_request:    Set_Attribute_Single_Request(is_orig);
         default                         -> other:                           bytestring &restofdata;
     };
 } &let {
@@ -578,9 +587,10 @@ type Request_Path = record {
 ##      Sends attribute_data to the get_attribute_all_response event. Cannot do further processing
 ##      on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
-type Get_Attributes_All_Response = record {
+type Get_Attributes_All_Response(is_orig: bool) = record {
     attribute_data          : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_get_attribute_all_response(this);
 } &byteorder=littleendian;
 
@@ -594,9 +604,10 @@ type Get_Attributes_All_Response = record {
 ##      Sends attribute_data to the set_attribute_all_request event. Cannot do further processing
 ##      on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
-type Set_Attributes_All_Request = record {
+type Set_Attributes_All_Request(is_orig: bool) = record {
     attribute_data          : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_set_attribute_all_request(this);
 } &byteorder=littleendian;
 
@@ -611,10 +622,11 @@ type Set_Attributes_All_Request = record {
 ## Protocol Parsing:
 ##      Sends attribute_count and attribute_list to the get_attribute_list_request event.
 ## ------------------------------------------------------------------------------------------------
-type Get_Attribute_List_Request = record {
+type Get_Attribute_List_Request(is_orig: bool) = record {
     attribute_count         : uint16;
     attribute_list          : uint16[attribute_count];
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_get_attribute_list_request(this);
 } &byteorder=littleendian;
 
@@ -630,10 +642,11 @@ type Get_Attribute_List_Request = record {
 ##      Sends attribute_count and attribute_data to the get_attribute_list_response event. Cannot 
 ##      do further processing on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
-type Get_Attribute_List_Response = record {
+type Get_Attribute_List_Response(is_orig: bool) = record {
     attribute_count         : uint16;
     attribute_data          : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_get_attribute_list_response(this);
 } &byteorder=littleendian;
 
@@ -649,10 +662,11 @@ type Get_Attribute_List_Response = record {
 ##      Sends attribute_count and attribute_data to the set_attribute_list_request event. Cannot 
 ##      do further processing on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
-type Set_Attribute_List_Request = record {
+type Set_Attribute_List_Request(is_orig: bool) = record {
     attribute_count         : uint16;
     attribute_data          : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_set_attribute_list_request(this);
 } &byteorder=littleendian;
 
@@ -668,10 +682,11 @@ type Set_Attribute_List_Request = record {
 ##      Sends attribute_count and attribute_data to the set_attribute_list_response event. Cannot 
 ##      do further processing on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
-type Set_Attribute_List_Response = record {
+type Set_Attribute_List_Response(is_orig: bool) = record {
     attribute_count         : uint16;
     attribute_data          : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_set_attribute_list_response(this);
 } &byteorder=littleendian;
 
@@ -726,9 +741,10 @@ type Multiple_Service_Packet_Response(is_orig: bool, cip_sequence_count: uint16,
 ##      Sends attribute_data to the get_attribute_single_response event. Cannot do further 
 ##      processing on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
-type Get_Attribute_Single_Response = record {
+type Get_Attribute_Single_Response(is_orig: bool) = record {
     attribute_data          : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_get_attribute_single_response(this);
 } &byteorder=littleendian;
 
@@ -743,10 +759,11 @@ type Get_Attribute_Single_Response = record {
 ##      Sends attribute_id and attribute_data to the set_attribute_single_response event. Cannot 
 ##      do further processing on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
-type Set_Attribute_Single_Request = record {
+type Set_Attribute_Single_Request(is_orig: bool) = record {
     attribute_id            : uint8;
     attribute_data          : bytestring &restofdata;
 } &let {
+    is_originator: bool = is_orig;
     deliver: bool = $context.flow.process_set_attribute_single_request(this);
 } &byteorder=littleendian;
 

@@ -235,6 +235,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_cip_identity(connection()->zeek_analyzer(),
                                                      connection()->zeek_analyzer()->Conn(),
+                                                     ${identity_item.is_originator},
                                                      ${identity_item.encapsulation_version},
                                                      ${identity_item.socket_address.sin_addr},
                                                      ${identity_item.socket_address.sin_port},
@@ -260,6 +261,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_register_session(connection()->zeek_analyzer(),
                                                          connection()->zeek_analyzer()->Conn(),
+                                                         ${message.is_originator},
                                                          ${message.protocol_version},
                                                          ${message.options_flags});
             }
@@ -275,6 +277,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_cip_security(connection()->zeek_analyzer(),
                                                      connection()->zeek_analyzer()->Conn(),
+                                                     ${security_item.is_originator},
                                                      ${security_item.security_profile},
                                                      ${security_item.cip_security_state},
                                                      ${security_item.enip_security_state},
@@ -292,6 +295,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_enip_capability(connection()->zeek_analyzer(),
                                                         connection()->zeek_analyzer()->Conn(),
+                                                        ${enip_item.is_originator},
                                                         ${enip_item.enip_profile});
             }
             return true;
@@ -306,6 +310,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_enip_service(connection()->zeek_analyzer(),
                                                      connection()->zeek_analyzer()->Conn(),
+                                                     ${service_item.is_originator},
                                                      ${service_item.protocol_version},
                                                      ${service_item.capability_flags},
                                                      to_stringval(${service_item.service_name}));
@@ -322,6 +327,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_connected_address(connection()->zeek_analyzer(),
                                                           connection()->zeek_analyzer()->Conn(),
+                                                          ${address_item.is_originator},
                                                           ${address_item.connection_identifier});
             }
             return true;
@@ -336,6 +342,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_sequenced_address(connection()->zeek_analyzer(),
                                                           connection()->zeek_analyzer()->Conn(),
+                                                          ${address_item.is_originator},
                                                           ${address_item.connection_identifier},
                                                           ${address_item.encap_sequence_number});
             }
@@ -351,6 +358,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_unconnected_message_dtls(connection()->zeek_analyzer(),
                                                                  connection()->zeek_analyzer()->Conn(),
+                                                                 ${message.is_originator},
                                                                  ${message.unconn_message_type},
                                                                  ${message.transaction_number},
                                                                  ${message.status});
@@ -367,6 +375,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_socket_address_info(connection()->zeek_analyzer(),
                                                             connection()->zeek_analyzer()->Conn(),
+                                                            ${item.is_originator},
                                                             ${item.sin_addr},
                                                             ${item.sin_port});
             }
@@ -382,6 +391,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_get_attribute_all_response(connection()->zeek_analyzer(),
                                                                    connection()->zeek_analyzer()->Conn(),
+                                                                   ${data.is_originator},
                                                                    to_stringval(${data.attribute_data}));
             }
             return true;
@@ -396,6 +406,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_set_attribute_all_request(connection()->zeek_analyzer(),
                                                                   connection()->zeek_analyzer()->Conn(),
+                                                                  ${data.is_originator},
                                                                   to_stringval(${data.attribute_data}));
             }
             return true;
@@ -415,6 +426,7 @@ refine flow ENIP_Flow += {
 
                 zeek::BifEvent::enqueue_get_attribute_list_request(connection()->zeek_analyzer(),
                                                                    connection()->zeek_analyzer()->Conn(),
+                                                                   ${data.is_originator},
                                                                    ${data.attribute_count},
                                                                    zeek::make_intrusive<zeek::StringVal>(attribute_ids));
             }
@@ -430,6 +442,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_get_attribute_list_response(connection()->zeek_analyzer(),
                                                                     connection()->zeek_analyzer()->Conn(),
+                                                                    ${data.is_originator},
                                                                     ${data.attribute_count},
                                                                     to_stringval(${data.attribute_data}));
             }
@@ -445,6 +458,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_set_attribute_list_request(connection()->zeek_analyzer(),
                                                                    connection()->zeek_analyzer()->Conn(),
+                                                                   ${data.is_originator},
                                                                    ${data.attribute_count},
                                                                    to_stringval(${data.attribute_data}));
             }
@@ -460,6 +474,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_set_attribute_list_response(connection()->zeek_analyzer(),
                                                                     connection()->zeek_analyzer()->Conn(),
+                                                                    ${data.is_originator},
                                                                     ${data.attribute_count},
                                                                     to_stringval(${data.attribute_data}));
             }
@@ -571,6 +586,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_get_attribute_single_response(connection()->zeek_analyzer(),
                                                                       connection()->zeek_analyzer()->Conn(),
+                                                                      ${data.is_originator},
                                                                       to_stringval(${data.attribute_data}));
             }
             return true;
@@ -585,6 +601,7 @@ refine flow ENIP_Flow += {
             {
                 zeek::BifEvent::enqueue_set_attribute_single_request(connection()->zeek_analyzer(),
                                                                      connection()->zeek_analyzer()->Conn(),
+                                                                     ${data.is_originator},
                                                                      ${data.attribute_id},
                                                                      to_stringval(${data.attribute_data}));
             }

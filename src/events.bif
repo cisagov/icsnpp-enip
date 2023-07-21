@@ -81,7 +81,8 @@ event cip_header%(c: connection,
 ## Default Output:
 ##      Writes to log file cip_identity.log
 ## ------------------------------------------------------------------------------------------------
-event cip_identity%(c: connection, 
+event cip_identity%(c: connection,
+                    is_orig: bool,
                     encapsulation_version: count, 
                     socket_address: count, 
                     socket_port: count, 
@@ -133,7 +134,8 @@ event cip_io%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event register_session%(c: connection, 
+event register_session%(c: connection,
+                        is_orig: bool,
                         protocol_version: count, 
                         options_flags: count%);
 
@@ -149,7 +151,8 @@ event register_session%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event cip_security%(c: connection, 
+event cip_security%(c: connection,
+                    is_orig: bool,
                     security_profile: count, 
                     cip_security_state: count, 
                     enip_security_state: count, 
@@ -164,7 +167,8 @@ event cip_security%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event enip_capability%(c: connection, 
+event enip_capability%(c: connection,
+                       is_orig: bool,
                        enip_profile: count%);
 
 ## ------------------------------------------enip-service------------------------------------------
@@ -178,7 +182,8 @@ event enip_capability%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event enip_service%(c: connection, 
+event enip_service%(c: connection,
+                    is_orig: bool,
                     protocol_version: count, 
                     capability_flags: count, 
                     service_name: string%);
@@ -192,7 +197,8 @@ event enip_service%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event connected_address%(c: connection, 
+event connected_address%(c: connection,
+                         is_orig: bool,
                          connection_id: count%);
 
 ## ---------------------------------------sequenced-address----------------------------------------
@@ -205,7 +211,8 @@ event connected_address%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event sequenced_address%(c: connection, 
+event sequenced_address%(c: connection,
+                         is_orig: bool,
                          connection_id: count, 
                          encap_sequence_num: count%);
 
@@ -220,7 +227,8 @@ event sequenced_address%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event unconnected_message_dtls%(c: connection, 
+event unconnected_message_dtls%(c: connection,
+                                is_orig: bool,
                                 unconn_message_type: count, 
                                 transaction_number: count, 
                                 status: count%);
@@ -235,7 +243,8 @@ event unconnected_message_dtls%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event socket_address_info%(c: connection, 
+event socket_address_info%(c: connection,
+                           is_orig: bool,
                            socket_address: count, 
                            socket_port: count%);
 
@@ -248,7 +257,8 @@ event socket_address_info%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event get_attribute_all_response%(c: connection, 
+event get_attribute_all_response%(c: connection,
+                                  is_orig: bool,
                                   attribute_data: string%);
 
 ## -----------------------------------set-attribute-all-request------------------------------------
@@ -260,7 +270,8 @@ event get_attribute_all_response%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event set_attribute_all_request%(c: connection, 
+event set_attribute_all_request%(c: connection,
+                                 is_orig: bool,
                                  attribute_data: string%);
 
 ## -----------------------------------get-attribute-list-request-----------------------------------
@@ -273,7 +284,8 @@ event set_attribute_all_request%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event get_attribute_list_request%(c: connection, 
+event get_attribute_list_request%(c: connection,
+                                  is_orig: bool,
                                   attribute_count: count, 
                                   attributes: string%);
 
@@ -287,7 +299,8 @@ event get_attribute_list_request%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event get_attribute_list_response%(c: connection, 
+event get_attribute_list_response%(c: connection,
+                                   is_orig: bool,
                                    attribute_count: count, 
                                    attributes: string%);
 
@@ -301,7 +314,8 @@ event get_attribute_list_response%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event set_attribute_list_request%(c: connection, 
+event set_attribute_list_request%(c: connection,
+                                  is_orig: bool,
                                   attribute_count: count, 
                                   attributes: string%);
 
@@ -315,7 +329,8 @@ event set_attribute_list_request%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event set_attribute_list_response%(c: connection, 
+event set_attribute_list_response%(c: connection,
+                                   is_orig: bool,
                                    attribute_count: count, 
                                    attributes: string%);
 
@@ -329,7 +344,8 @@ event set_attribute_list_response%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event multiple_service_request%(c: connection, 
+event multiple_service_request%(c: connection,
+                                is_orig: bool,
                                 service_count: count, 
                                 services: string%);
 
@@ -343,7 +359,8 @@ event multiple_service_request%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event multiple_service_response%(c: connection, 
+event multiple_service_response%(c: connection,
+                                 is_orig: bool,
                                  service_count: count, 
                                  services: string%);
 
@@ -356,7 +373,8 @@ event multiple_service_response%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event get_attribute_single_response%(c: connection, 
+event get_attribute_single_response%(c: connection,
+                                     is_orig: bool,
                                      attribute_value: string%);
 
 ## ----------------------------------set-attribute-single-request----------------------------------
@@ -369,7 +387,8 @@ event get_attribute_single_response%(c: connection,
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
-event set_attribute_single_request%(c: connection, 
+event set_attribute_single_request%(c: connection,
+                                    is_orig: bool,
                                     attribute_id: count, 
                                     attribute_value: string%);
 

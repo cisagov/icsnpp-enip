@@ -88,19 +88,23 @@ This log captures Ethernet/IP header information for every Ethernet/IP packet an
 
 #### Fields Captured
 
-| Field             | Type      | Description                                               |
-| ----------------- |-----------|-----------------------------------------------------------| 
-| ts                | time      | Timestamp                                                 |
-| uid               | string    | Unique ID for this connection                             |
-| id                | conn_id   | Default Zeek connection info (IP addresses, ports)        |
-| is_orig           | bool      | True if the packet is sent from the originator            |
-| enip_command_code | string    | Ethernet/IP command code                                  |
-| enip_command      | string    | Ethernet/IP command name                                  |
-| length            | count     | Length of ENIP data following header                      |
-| session_handle    | string    | Session identifier                                        |
-| enip_status       | string    | Ethernet/IP status code                                   |
-| sender_context    | string    | Sender context                                            |
-| options           | string    | Options flags                                             |
+| Field             | Type      | Description                                                   |
+| ----------------- |-----------|-------------------------------------------------------------- |
+| ts                | time      | Timestamp                                                     |
+| uid               | string    | Unique ID for this connection                                 |
+| id                | conn_id   | Default Zeek connection info (IP addresses, ports)            |
+| is_orig           | bool      | True if the packet is sent from the originator                |
+| source_h          | address   | Source IP address (see *Source and Destination Fields*)       |
+| source_p          | port      | Source Port (see *Source and Destination Fields*)             |
+| destination_h     | address   | Destination IP address (see *Source and Destination Fields*)  |
+| destination_p     | port      | Destination Port (see *Source and Destination Fields*)        |
+| enip_command_code | string    | Ethernet/IP command code                                      |
+| enip_command      | string    | Ethernet/IP command name                                      |
+| length            | count     | Length of ENIP data following header                          |
+| session_handle    | string    | Session identifier                                            |
+| enip_status       | string    | Ethernet/IP status code                                       |
+| sender_context    | string    | Sender context                                                |
+| options           | string    | Options flags                                                 |
 
 ### CIP Header Log (cip.log)
 
@@ -110,24 +114,28 @@ This log captures CIP header information for every CIP packet and logs it to **c
 
 #### Fields Captured
 
-| Field                     | Type      | Description                                               |
-| ------------------------- |-----------|-----------------------------------------------------------|
-| ts                        | time      | Timestamp                                                 |
-| uid                       | string    | Unique ID for this connection                             |
-| id                        | conn_id   | Default Zeek connection info (IP addresses, ports)        |
-| is_orig                   | bool      | True if the packet is sent from the originator            |
-| cip_sequence_count        | count     | CIP sequence number                                       |
-| direction                 | string    | Request or response                                       |
-| cip_service_code          | string    | CIP service code                                          |
-| cip_service               | string    | CIP service name                                          |
-| cip_status_code           | string    | CIP status code                                           |
-| cip_status                | string    | CIP status name                                           |
-| cip_extended_status_code  | string    | CIP extended status code                                  |
-| cip_extended_status       | string    | CIP extended status name                                  |
-| class_id                  | string    | CIP request path - class ID                               |
-| class_name                | string    | CIP request path - class name                             |
-| instance_id               | string    | CIP request path - instance ID                            |
-| attribute_id              | string    | CIP request path - attribute ID                           |
+| Field                     | Type      | Description                                                   |
+| ------------------------- |-----------|-------------------------------------------------------------- |
+| ts                        | time      | Timestamp                                                     |
+| uid                       | string    | Unique ID for this connection                                 |
+| id                        | conn_id   | Default Zeek connection info (IP addresses, ports)            |
+| is_orig                   | bool      | True if the packet is sent from the originator                |
+| source_h                  | address   | Source IP address (see *Source and Destination Fields*)       |
+| source_p                  | port      | Source Port (see *Source and Destination Fields*)             |
+| destination_h             | address   | Destination IP address (see *Source and Destination Fields*)  |
+| destination_p             | port      | Destination Port (see *Source and Destination Fields*)        |
+| cip_sequence_count        | count     | CIP sequence number                                           |
+| direction                 | string    | Request or response                                           |
+| cip_service_code          | string    | CIP service code                                              |
+| cip_service               | string    | CIP service name                                              |
+| cip_status_code           | string    | CIP status code                                               |
+| cip_status                | string    | CIP status name                                               |
+| cip_extended_status_code  | string    | CIP extended status code                                      |
+| cip_extended_status       | string    | CIP extended status name                                      |
+| class_id                  | string    | CIP request path - class ID                                   |
+| class_name                | string    | CIP request path - class name                                 |
+| instance_id               | string    | CIP request path - instance ID                                |
+| attribute_id              | string    | CIP request path - attribute ID                               |
 
 ### CIP I/O Log (cip_io.log)
 
@@ -137,16 +145,20 @@ This log captures CIP I/O (input-output) data for every CIP IO packet and logs i
 
 #### Fields Captured
 
-| Field                 | Type      | Description                                               |
-| --------------------- |-----------|-----------------------------------------------------------|
-| ts                    | time      | Timestamp                                                 |
-| uid                   | string    | Unique ID for this connection                             |
-| id                    | conn_id   | Default Zeek connection info (IP addresses, ports)        |
-| is_orig               | bool      | True if the packet is sent from the originator            |
-| connection_id         | string    | Connection identifier                                     |
-| sequence_number       | count     | Sequence number within connection                         |
-| data_length           | count     | Length of data in io_data field                           |
-| io_data               | string    | CIP IO data (in hex)                                      |
+| Field                 | Type      | Description                                                   |
+| --------------------- |-----------|-------------------------------------------------------------- |
+| ts                    | time      | Timestamp                                                     |
+| uid                   | string    | Unique ID for this connection                                 |
+| id                    | conn_id   | Default Zeek connection info (IP addresses, ports)            |
+| is_orig               | bool      | True if the packet is sent from the originator                |
+| source_h              | address   | Source IP address (see *Source and Destination Fields*)       |
+| source_p              | port      | Source Port (see *Source and Destination Fields*)             |
+| destination_h         | address   | Destination IP address (see *Source and Destination Fields*)  |
+| destination_p         | port      | Destination Port (see *Source and Destination Fields*)        |
+| connection_id         | string    | Connection identifier                                         |
+| sequence_number       | count     | Sequence number within connection                             |
+| data_length           | count     | Length of data in io_data field                               |
+| io_data               | string    | CIP IO data (in hex)                                          |
 
 ### CIP Identity Log (cip_identity.log)
 
@@ -156,24 +168,73 @@ This log captures important variables for CIP_Identity objects and logs them to 
 
 #### Fields Captured
 
-| Field                 | Type      | Description                                           |
-| --------------------- |-----------|-------------------------------------------------------|
-| ts                    | time      | Timestamp                                             |
-| uid                   | string    | Unique ID for this connection                         |
-| id                    | conn_id   | Default Zeek connection info (IP addresses, ports)    |
-| encapsulation_version | count     | Encapsulation protocol version supported              |
-| socket_address        | addr      | Socket address IP address                             |
-| socket_port           | count     | Socket address port number                            |
-| vendor_id             | count     | Vendor ID                                             |
-| vendor_name           | string    | Name of vendor                                        |
-| device_type_id        | count     | Device type ID                                        |
-| device_type_name      | string    | Name of device type                                   |
-| product_code          | count     | Product code assigned to device                       |
-| revision              | string    | Device revision (major.minor)                         |
-| device_status         | string    | Current status of device                              |
-| serial_number         | string    | Serial number of device                               |
-| product_name          | string    | Human readable description of device                  |
-| device_state          | string    | Current state of the device                           |
+| Field                 | Type      | Description                                                   |
+| --------------------- |-----------|-------------------------------------------------------------- |
+| ts                    | time      | Timestamp                                                     |
+| uid                   | string    | Unique ID for this connection                                 |
+| id                    | conn_id   | Default Zeek connection info (IP addresses, ports)            |
+| is_orig               | bool      | True if the packet is sent from the originator                |
+| source_h              | address   | Source IP address (see *Source and Destination Fields*)       |
+| source_p              | port      | Source Port (see *Source and Destination Fields*)             |
+| destination_h         | address   | Destination IP address (see *Source and Destination Fields*)  |
+| destination_p         | port      | Destination Port (see *Source and Destination Fields*)        |
+| encapsulation_version | count     | Encapsulation protocol version supported                      |
+| socket_address        | addr      | Socket address IP address                                     |
+| socket_port           | count     | Socket address port number                                    |
+| vendor_id             | count     | Vendor ID                                                     |
+| vendor_name           | string    | Name of vendor                                                |
+| device_type_id        | count     | Device type ID                                                |
+| device_type_name      | string    | Name of device type                                           |
+| product_code          | count     | Product code assigned to device                               |
+| revision              | string    | Device revision (major.minor)                                 |
+| device_status         | string    | Current status of device                                      |
+| serial_number         | string    | Serial number of device                                       |
+| product_name          | string    | Human readable description of device                          |
+| device_state          | string    | Current state of the device                                   |
+
+### Source and Destination Fields
+
+#### Overview
+
+Zeek's typical behavior is to focus on and log packets from the originator and not log packets from the responder. However, most ICS protocols contain useful information in the responses, so the ICSNPP parsers log both originator and responses packets. Zeek's default behavior, defined in its `id` struct, is to never switch these originator/responder roles which leads to inconsistencies and inaccuracies when looking at ICS traffic that logs responses.
+
+The default Zeek `id` struct contains the following logged fields:
+* id.orig_h (Original Originator/Source Host)
+* id.orig_p (Original Originator/Source Port)
+* id.resp_h (Original Responder/Destination Host)
+* id.resp_p (Original Responder/Destination Port)
+
+Additionally, the `is_orig` field is a boolean field that is set to T (True) when the id_orig fields are the true originators/source and F (False) when the id_resp fields are the true originators/source.
+
+To not break existing platforms that utilize the default `id` struct and `is_orig` field functionality, the ICSNPP team has added four new fields to each log file instead of changing Zeek's default behavior. These four new fields provide the accurate information regarding source and destination IP addresses and ports:
+* source_h (True Originator/Source Host)
+* source_p (True Originator/Source Port)
+* destination_h (True Responder/Destination Host)
+* destination_p (True Responder/Destination Port)
+
+The pseudocode below shows the relationship between the `id` struct, `is_orig` field, and the new `source` and `destination` fields.
+
+```
+if is_orig == True
+    source_h == id.orig_h
+    source_p == id.orig_p
+    destination_h == id.resp_h
+    destination_p == id.resp_p
+if is_orig == False
+    source_h == id.resp_h
+    source_p == id.resp_p
+    destination_h == id.orig_h
+    destination_p == id.orig_p
+```
+
+#### Example
+
+The table below shows an example of these fields in the log files. The first log in the table represents a Modbus request from 192.168.1.10 -> 192.168.1.200 and the second log represents a Modbus reply from 192.168.1.200 -> 192.168.1.10. As shown in the table below, the `id` structure lists both packets as having the same originator and responder, but the `source` and `destination` fields reflect the true source and destination of these packets.
+
+| id.orig_h    | id.orig_p | id.resp_h     | id.resp_p | is_orig | source_h      | source_p | destination_h | destination_p |
+| ------------ | --------- |---------------|-----------|---------|---------------|----------|---------------|-------------- |
+| 192.168.1.10 | 47785     | 192.168.1.200 | 502       | T       | 192.168.1.10  | 47785    | 192.168.1.200 | 502           |
+| 192.168.1.10 | 47785     | 192.168.1.200 | 502       | F       | 192.168.1.200 | 502      | 192.168.1.10  | 47785         |
 
 ## ICSNPP Packages
 
