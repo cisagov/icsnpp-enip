@@ -20,16 +20,16 @@
 
 signature dpd_enip_tcp {
   ip-proto == tcp
-  src-port == 1024-65535
-  dst-port == 1024-65535
+  src-port >= 1024
+  dst-port >= 1024
   payload /^[\x00\x04\x63\x64\x65\x66\x6f\x70\x72\x73]\x00[\x00-\xff]{6}[\x00\x01\x02\x03\x64\x65\x69\x6a]\x00{3}[\x00-\xff][\x00-\xff]{4}/
   enable "ENIP_TCP"
 }
 
 signature dpd_enip_udp {
   ip-proto == udp
-  src-port == 1024-65535
-  dst-port == 1024-65535
+  src-port >= 1024
+  dst-port >= 1024
   payload /^[\x00\x04\x63\x64\x65\x66\x6f\x70\x72\x73]\x00[\x00-\xff]{6}[\x00\x01\x02\x03\x64\x65\x69\6a]\x00{3}[\x00-\xff][\x00-\xff]{4}/
   enable "ENIP_UDP"
 }
