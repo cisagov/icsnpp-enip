@@ -80,6 +80,14 @@ tar xvzf build/Zeek_Enip.tgz -C $ZEEK_PLUGIN_PATH
 
 ## Logging Capabilities
 
+It its default configuration, this parser will only log Ethernet/IP and CIP packets on ports 2222 and 44818. This decision was made due to the false positives generated when a signature-only based detection system was used.
+
+If users know of Ethernet/IP and CIP traffic that operate on ports other than 2222 or 44818, there are two options:
+* Allow signature detection on additional, known ports only:
+  * In [scripts/icsnpp/enip/dpd.sig](scripts/icsnpp/enip/dpd.sig): add the known Ethernet/IP and CIP port numbers to the lines: `dst-port == 2222, 44818`
+* Allow signature detection on all ports (may produce false positive):
+  * In [scripts/icsnpp/enip/dpd.sig](scripts/icsnpp/enip/dpd.sig): replace the lines: `dst-port == 2222, 44818` with `dst-port >= 1024`
+
 ### ENIP Header Log (enip.log)
 
 #### Overview
