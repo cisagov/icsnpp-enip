@@ -37,6 +37,7 @@ export{
         options                 : string    &log;   # Options flags
     };
     global log_enip: event(rec: ENIP_Header);
+    global log_policy_enip: Log::PolicyHook;
 
     ###############################################################################################
     ###################################  CIP_Header -> cip.log  ###################################
@@ -64,6 +65,7 @@ export{
         attribute_id                : string    &log;   # CIP Request Path - Attribute ID
     };
     global log_cip: event(rec: CIP_Header);
+    global log_policy_cip: Log::PolicyHook;
 
     ###############################################################################################
     ##################################  CIP_IO_Log -> cip_io.log  #################################
@@ -83,6 +85,7 @@ export{
         io_data                 : string    &log;   # CIP IO Data
     };
     global log_cip_io: event(rec: CIP_IO_Log);
+    global log_policy_cip_io: Log::PolicyHook;
 
     ###############################################################################################
     #########################  CIP_Identity_Item_Log -> cip_identity.log  #########################
@@ -111,6 +114,7 @@ export{
         device_state            : string    &log;   # Current state of the device
     };
     global log_cip_identity: event(rec: CIP_Identity_Item_Log);
+    global log_policy_cip_identity: Log::PolicyHook;
 }
 
 # Defines ENIP/CIP ports
@@ -143,19 +147,23 @@ redef likely_server_ports += { ports };
 event zeek_init() &priority=5 {
     Log::create_stream(ENIP::LOG_ENIP, [$columns=ENIP_Header,
                                         $ev=log_enip,
-                                        $path="enip"]);
+                                        $path="enip",
+                                        $policy=log_policy_enip]);
 
     Log::create_stream(ENIP::LOG_CIP, [$columns=CIP_Header,
                                        $ev=log_cip,
-                                       $path="cip"]);
+                                       $path="cip",
+                                       $policy=log_policy_cip]);
 
     Log::create_stream(ENIP::LOG_CIP_IO, [$columns=CIP_IO_Log,
                                           $ev=log_cip_io,
-                                          $path="cip_io"]);
+                                          $path="cip_io",
+                                          $policy=log_policy_cip_io]);
 
     Log::create_stream(ENIP::LOG_CIP_IDENTITY, [$columns=CIP_Identity_Item_Log,
                                                 $ev=log_cip_identity,
-                                                $path="cip_identity"]);
+                                                $path="cip_identity",
+                                                $policy=log_policy_cip_identity]);
     #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
     #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
     # Monitor only the UDP Port assigned to implicit ENIP/CIP IO Messages
