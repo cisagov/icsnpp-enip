@@ -244,6 +244,24 @@ The table below shows an example of these fields in the log files. The first log
 | 192.168.1.10 | 47785     | 192.168.1.200 | 502       | T       | 192.168.1.10  | 47785    | 192.168.1.200 | 502           |
 | 192.168.1.10 | 47785     | 192.168.1.200 | 502       | F       | 192.168.1.200 | 502      | 192.168.1.10  | 47785         |
 
+## Coverage
+
+See [Logging Capabilities](#logging-capabilities) for detailed information of the parser coverage.
+
+### Note
+
+Ethernet/IP and CIP have a lot of vendor and product specific messages that are not included in this parser. All coverage details in this section include information and statistics based on the basic/default Ethernet/IP and CIP protocols.
+
+### General/Header Logging
+
+The general log files for Ethernet/IP (enip.log) and CIP (cip.log) contain basic header information for all basic/default (~100%) Ethernet/IP and CIP messages.
+
+### Detailed Logging
+
+Detailed logging for 1 Ethernet/IP command is logged in the CIP identity log file (cip_identity.log). The other 9 Ethernet/IP commands do not contain detailed logging, therefore 10% (1/10) of the Ethernet/IP commands contain detailed logging.
+
+There is currently no (0%) detailed logging for regular CIP services outside of the CIP general/header log file (cip.log).
+
 ## ICSNPP Packages
 
 All ICSNPP Packages:
