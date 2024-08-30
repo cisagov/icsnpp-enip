@@ -26,16 +26,18 @@
 type ENIP_PDU(is_orig: bool) = record {
     command:    uint16;
     proto: case command of {
-        2                     -> udp_pdu:                  CIP_IO(is_orig);
-        default               -> tcp_pdu:                  ENIP_TCP(is_orig, command);
-    };
+        2                     -> udp_pdu:                  CIP_IO(is_orig, packet_correlation_id);
+        default               -> tcp_pdu:                  ENIP_TCP(is_orig, command, packet_correlation_id);
+    } &requires(packet_correlation_id);
+} &let {
+    packet_correlation_id: string = $context.flow.generate_packet_id();
 } &byteorder=littleendian;
 
-type ENIP_TCP(is_orig: bool, command: uint16) = record {
-    header                  : ENIP_Header(is_orig, command);
+type ENIP_TCP(is_orig: bool, command: uint16, packet_correlation_id: string) = record {
+    header                  : ENIP_Header(is_orig, command, packet_correlation_id);
     body                    : case is_orig of {
-        true                -> originator:              ENIP_Originator(command);
-        false               -> target:                  ENIP_Target(command);
+        true                -> originator:              ENIP_Originator(command, packet_correlation_id);
+        false               -> target:                  ENIP_Target(command, packet_correlation_id);
     };
 } &byteorder=littleendian;
 
@@ -53,7 +55,7 @@ type ENIP_TCP(is_orig: bool, command: uint16) = record {
 ##      Starts protocol parsing by getting Ethernet/IP header and passes processing to either
 ##      ENIP_Originator or ENIP_Target depending on is_orig value.
 ## ------------------------------------------------------------------------------------------------
-type CIP_IO(is_orig: bool) = record {
+type CIP_IO(is_orig: bool, packet_correlation_id: string) = record {
     sequenced_address_type:     uint16; # Always 0x8002
     sequenced_address_length:   uint16; # Always 8
     sequenced_address_item:     Sequenced_Address_Item(is_orig);
@@ -80,15 +82,15 @@ type CIP_IO(is_orig: bool) = record {
 ## Protocol Parsing:
 ##      Continue with parsing of Ethernet/IP message depending on ENIP command
 ## ------------------------------------------------------------------------------------------------
-type ENIP_Originator(command: uint16) = case command of {
+type ENIP_Originator(command: uint16, packet_correlation_id: string) = case command of {
     NOP                     -> nop:                     Nop;
     LIST_IDENTITY           -> list_identity:           empty;
     LIST_INTERFACES         -> list_interfaces:         empty;
     REGISTER_SESSION        -> register_session:        Register_Session(true);
     UNREGISTER_SESSION      -> unregister_session:      empty;
     LIST_SERVICES           -> list_services:           empty;
-    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(true);
-    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data(true);
+    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(true, packet_correlation_id);
+    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data(true, packet_correlation_id);
     default                 -> unknown:                 bytestring &restofdata;
 };
 
@@ -98,15 +100,15 @@ type ENIP_Originator(command: uint16) = case command of {
 ## Protocol Parsing:
 ##      Continue with parsing of Ethernet/IP message depending on ENIP command
 ## ------------------------------------------------------------------------------------------------
-type ENIP_Target(command: uint16) = case command of {
+type ENIP_Target(command: uint16, packet_correlation_id: string) = case command of {
     NOP                     -> nop:                     Nop;
-    LIST_IDENTITY           -> list_identity:           List_Identity_Response;
-    LIST_INTERFACES         -> list_interfaces:         List_Interfaces_Response;
+    LIST_IDENTITY           -> list_identity:           List_Identity_Response(packet_correlation_id);
+    LIST_INTERFACES         -> list_interfaces:         List_Interfaces_Response(packet_correlation_id);
     REGISTER_SESSION        -> register_session:        Register_Session(false);
     UNREGISTER_SESSION      -> unregister_session:      empty;
-    LIST_SERVICES           -> list_services:           List_Services_Response;
-    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(false);
-    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data(false);
+    LIST_SERVICES           -> list_services:           List_Services_Response(packet_correlation_id);
+    SEND_RR_DATA            -> send_rr_data:            Send_RR_Data(false, packet_correlation_id);
+    SEND_UNIT_DATA          -> send_unit_data:          Send_Unit_Data(false, packet_correlation_id);
     default                 -> unknown:                 bytestring &restofdata;
 };
 
@@ -124,7 +126,7 @@ type ENIP_Target(command: uint16) = case command of {
 ##      Sends header information to the enip_header event. By default this is then logged to the 
 ##      enip.log file as defined in main.zeek.
 ## ------------------------------------------------------------------------------------------------
-type ENIP_Header(is_orig: bool, command: uint16) = record {
+type ENIP_Header(is_orig: bool, command: uint16, packet_correlation_id: string) = record {
     #command                 : uint16;
     length                  : uint16;
     session_handle          : uint32;
@@ -161,9 +163,9 @@ type Nop = record {
 ##      Continue with parsing of target items (see CIP_Identity_Item, ENIP_Capability_Item, and
 ##      CIP_Security_Item)
 ## ------------------------------------------------------------------------------------------------
-type List_Identity_Response = record {
+type List_Identity_Response(packet_correlation_id: string) = record {
     item_count              : uint16;
-    target_items            : Common_Packet_Format_Item(false)[item_count];
+    target_items            : Common_Packet_Format_Item(false, packet_correlation_id)[item_count];
 } &byteorder=littleendian;
 
 ## ------------------------------------List-Interfaces-Response------------------------------------
@@ -176,9 +178,9 @@ type List_Identity_Response = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items (see Common_Packet_Format_Item)
 ## ------------------------------------------------------------------------------------------------
-type List_Interfaces_Response = record {
+type List_Interfaces_Response(packet_correlation_id: string) = record {
     item_count              : uint16;
-    target_items            : Common_Packet_Format_Item(false)[item_count];
+    target_items            : Common_Packet_Format_Item(false, packet_correlation_id)[item_count];
 } &byteorder=littleendian;
 
 ## ----------------------------------------Register-Session----------------------------------------
@@ -208,9 +210,9 @@ type Register_Session(is_orig: bool) = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items (see Service_Item)
 ## ------------------------------------------------------------------------------------------------
-type List_Services_Response = record {
+type List_Services_Response(packet_correlation_id: string) = record {
     item_count              : uint16;
-    target_items            : Common_Packet_Format_Item(false)[item_count];
+    target_items            : Common_Packet_Format_Item(false, packet_correlation_id)[item_count];
 } &byteorder=littleendian;
 
 ## ------------------------------------------Send-RR-Data------------------------------------------
@@ -225,11 +227,11 @@ type List_Services_Response = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items (see Common_Packet_Format_Item)
 ## ------------------------------------------------------------------------------------------------
-type Send_RR_Data(is_orig: bool) = record {
+type Send_RR_Data(is_orig: bool, packet_correlation_id: string) = record {
     interface_handle        : uint32;
     timeout                 : uint16;
     item_count              : uint16;
-    encap_items             : Common_Packet_Format_Item(is_orig)[item_count];
+    encap_items             : Common_Packet_Format_Item(is_orig, packet_correlation_id)[item_count];
 } &byteorder=littleendian;
 
 ## -----------------------------------------Send-Unit-Data-----------------------------------------
@@ -244,11 +246,11 @@ type Send_RR_Data(is_orig: bool) = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items (see Common_Packet_Format_Item)
 ## ------------------------------------------------------------------------------------------------
-type Send_Unit_Data(is_orig: bool) = record {
+type Send_Unit_Data(is_orig: bool, packet_correlation_id: string) = record {
     interface_handle        : uint32;
     timeout                 : uint16;
     item_count              : uint16;
-    encap_items             : Common_Packet_Format_Item(is_orig)[item_count];
+    encap_items             : Common_Packet_Format_Item(is_orig, packet_correlation_id)[item_count];
 } &byteorder=littleendian;
 
 ###################################################################################################
@@ -271,22 +273,22 @@ type Send_Unit_Data(is_orig: bool) = record {
 ## Protocol Parsing:
 ##      Continue with parsing of target items according to Type ID.
 ## ------------------------------------------------------------------------------------------------
-type Common_Packet_Format_Item(is_orig: bool) = record {
+type Common_Packet_Format_Item(is_orig: bool, packet_correlation_id: string) = record {
     item_type               : uint16;
     item_length             : uint16;
     item_data               : case item_type of {
         NULL_ADDRESS                    -> null_address:                    empty;
-        CIP_IDENTITY                    -> cip_identity_item:               CIP_Identity_Item(is_orig);
+        CIP_IDENTITY                    -> cip_identity_item:               CIP_Identity_Item(is_orig, packet_correlation_id);
         CIP_SECURITY                    -> cip_security_item:               CIP_Security_Item(is_orig);
         ENIP_CAPABILITY                 -> enip_capability:                 ENIP_Capability_Item(is_orig);
         CONNECTED_ADDRESS               -> connected_address:               Connected_Address_Item(is_orig);
-        CONNECTED_TRANSPORT_DATA        -> connected_transport_data:        Connected_Data_Item(is_orig, item_length);
-        UNCONNECTED_MESSAGE_DATA        -> unconnected_message_data:        Unconnected_Data_Item(is_orig, item_length);
+        CONNECTED_TRANSPORT_DATA        -> connected_transport_data:        Connected_Data_Item(is_orig, item_length, packet_correlation_id);
+        UNCONNECTED_MESSAGE_DATA        -> unconnected_message_data:        Unconnected_Data_Item(is_orig, item_length, packet_correlation_id);
         LIST_SERVICES_RESPONSE          -> list_services_response:          Service_Item(is_orig);
         SOCK_ADDR_DATA_ORIG_TO_TARGET   -> sock_addr_data_orig_to_target:   Socket_Address_Info_Item(is_orig);
         SOCK_ADDR_DATA_TARGET_TO_ORIG   -> sock_addr_data_target_to_orig:   Socket_Address_Info_Item(is_orig);
         SEQUENCED_ADDRESS_ITEM          -> sequenced_address_item:          Sequenced_Address_Item(is_orig);
-        UNCONNECTED_MESSAGE_DTLS        -> unconnected_message_dtls:        Unconnected_Message_DTLS(is_orig, item_length);
+        UNCONNECTED_MESSAGE_DTLS        -> unconnected_message_dtls:        Unconnected_Message_DTLS(is_orig, item_length, packet_correlation_id);
         default                         -> unknown:                         bytestring &restofdata;
     };
 } &byteorder=littleendian;
@@ -312,7 +314,7 @@ type Common_Packet_Format_Item(is_orig: bool) = record {
 ##      Sends all variables to the cip_identity event. By default this is then logged to the 
 ##      cip_identity.log file as defined in main.zeek.
 ## ------------------------------------------------------------------------------------------------
-type CIP_Identity_Item(is_orig: bool) = record {
+type CIP_Identity_Item(is_orig: bool,  packet_correlation_id: string) = record {
     encapsulation_version   : uint16;
     socket_address          : Socket_Address_Info_Item(is_orig);
     vendor_id               : uint16;
@@ -458,8 +460,8 @@ type Sequenced_Address_Item(is_orig: bool) = record {
 ## Protocol Parsing:
 ##      Continue with parsing of CIP Data (see CIP_Header)
 ## ------------------------------------------------------------------------------------------------
-type Unconnected_Data_Item(is_orig: bool, message_size: uint16) = record {
-    unconnected_message     : CIP_Header(is_orig, 0);
+type Unconnected_Data_Item(is_orig: bool, message_size: uint16, packet_correlation_id: string) = record {
+    unconnected_message     : CIP_Header(is_orig, 0, packet_correlation_id);
 } &byteorder=littleendian;
 
 ## --------------------------------------Connected-Data-Item---------------------------------------
@@ -471,9 +473,9 @@ type Unconnected_Data_Item(is_orig: bool, message_size: uint16) = record {
 ## Protocol Parsing:
 ##      Continue with parsing of CIP Data (see CIP_Header)
 ## ------------------------------------------------------------------------------------------------
-type Connected_Data_Item(is_orig: bool, message_size: uint16) = record {
+type Connected_Data_Item(is_orig: bool, message_size: uint16, packet_correlation_id: string) = record {
     cip_sequence_count      : uint16;
-    transport_packet        : CIP_Header(is_orig, cip_sequence_count);
+    transport_packet        : CIP_Header(is_orig, cip_sequence_count, packet_correlation_id);
 } &byteorder=littleendian;
 
 ## ------------------------------------Unconnected-Message-DTLS------------------------------------
@@ -488,11 +490,11 @@ type Connected_Data_Item(is_orig: bool, message_size: uint16) = record {
 ##      Sends unconn_message_type, transaction_number, and status to the unconnected_message_dtls
 ##      event and then continues with parsing of CIP Data (see CIP_Header).
 ## ------------------------------------------------------------------------------------------------
-type Unconnected_Message_DTLS(is_orig: bool, message_size: uint16) = record {
+type Unconnected_Message_DTLS(is_orig: bool, message_size: uint16, packet_correlation_id: string) = record {
     unconn_message_type     : uint16;
     transaction_number      : uint32;
     status                  : uint16;
-    unconnected_message     : CIP_Header(is_orig, 0);
+    unconnected_message     : CIP_Header(is_orig, 0, packet_correlation_id);
 } &let {
     is_originator : bool = is_orig;
     deliver: bool = $context.flow.process_unconnected_message_dtls(this);
@@ -519,7 +521,7 @@ type Unconnected_Message_DTLS(is_orig: bool, message_size: uint16) = record {
 ##      Sends CIP header information to the cip_header event and continues on with CIP service 
 ##      parsing. By default, CIP header info is logged to the cip.log file as defined in main.zeek. 
 ## ------------------------------------------------------------------------------------------------
-type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
+type CIP_Header(is_orig: bool, cip_sequence_count: uint16, packet_correlation_id: string) = record {
     service                 : uint8;
     request_path            : Request_Path;
     status_code             : case (service >> 7) of {
@@ -533,8 +535,8 @@ type CIP_Header(is_orig: bool, cip_sequence_count: uint16) = record {
         GET_ATTRIBUTE_LIST_RESPONSE     -> get_attribute_list_response:     Get_Attribute_List_Response(is_orig);
         SET_ATTRIBUTE_LIST              -> set_attribute_list:              Set_Attribute_List_Request(is_orig);
         SET_ATTRIBUTE_LIST_RESPONSE     -> set_attribute_list_response:     Set_Attribute_List_Response(is_orig);
-        MULTIPLE_SERVICE                -> multiple_service_request:        Multiple_Service_Packet_Request(is_orig, cip_sequence_count, request_path);
-        MULTIPLE_SERVICE_RESPONSE       -> multiple_service_response:       Multiple_Service_Packet_Response(is_orig, cip_sequence_count, response_packet.status, response_packet.status_extended);
+        MULTIPLE_SERVICE                -> multiple_service_request:        Multiple_Service_Packet_Request(is_orig, cip_sequence_count, request_path, packet_correlation_id);
+        MULTIPLE_SERVICE_RESPONSE       -> multiple_service_response:       Multiple_Service_Packet_Response(is_orig, cip_sequence_count, response_packet.status, response_packet.status_extended, packet_correlation_id);
         GET_ATTRIBUTE_SINGLE_RESPONSE   -> get_attribute_single_response:   Get_Attribute_Single_Response(is_orig);
         SET_ATTRIBUTE_SINGLE            -> set_attribute_single_request:    Set_Attribute_Single_Request(is_orig);
         default                         -> other:                           bytestring &restofdata;
@@ -701,7 +703,7 @@ type Set_Attribute_List_Response(is_orig: bool) = record {
 ## Protocol Parsing:
 ##      Sends message data to the multiple_service_request event.
 ## ------------------------------------------------------------------------------------------------
-type Multiple_Service_Packet_Request(is_orig: bool, cip_sequence_count: uint16, request_path: Request_Path) = record {
+type Multiple_Service_Packet_Request(is_orig: bool, cip_sequence_count: uint16, request_path: Request_Path, packet_correlation_id: string) = record {
     service_count           : uint16;
     service_offsets         : uint16[service_count];
     services                : bytestring &restofdata;
@@ -722,7 +724,7 @@ type Multiple_Service_Packet_Request(is_orig: bool, cip_sequence_count: uint16, 
 ##      Sends message data to the multiple_service_response event.
 ## TODO: edit this function description with updates
 ## ------------------------------------------------------------------------------------------------
-type Multiple_Service_Packet_Response(is_orig: bool, cip_sequence_count: uint16, status: uint8, status_extended: bytestring) = record {
+type Multiple_Service_Packet_Response(is_orig: bool, cip_sequence_count: uint16, status: uint8, status_extended: bytestring, packet_correlation_id: string) = record {
     service_count           : uint16;
     service_offsets         : uint16[service_count];
     services                : bytestring &restofdata;
