@@ -28,6 +28,7 @@ export{
         source_p                : port      &log;   # Source Port
         destination_h           : addr      &log;   # Destination IP Address
         destination_p           : port      &log;   # Destination Port
+        packet_correlation_id   : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
         enip_command_code       : string    &log;   # Ethernet/IP Command Code (in hex)
         enip_command            : string    &log;   # Ethernet/IP Command Name (see enip_commands)
         length                  : count     &log;   # Length of ENIP data following header
@@ -51,6 +52,7 @@ export{
         source_p                    : port      &log;   # Source Port
         destination_h               : addr      &log;   # Destination IP Address
         destination_p               : port      &log;   # Destination Port
+        packet_correlation_id       : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
         cip_sequence_count          : count     &log;   # CIP sequence number for transport
         direction                   : string    &log;   # Request or Response
         cip_service_code            : string    &log;   # CIP service code (in hex)
@@ -79,6 +81,7 @@ export{
         source_p                : port      &log;   # Source Port
         destination_h           : addr      &log;   # Destination IP Address
         destination_p           : port      &log;   # Destination Port
+        packet_correlation_id   : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
         connection_id           : string    &log;   # CIP Connection Identifier
         sequence_number         : count     &log;   # CIP Sequence Number with Connection
         data_length             : count     &log;   # Length of io_data field
@@ -99,6 +102,7 @@ export{
         source_p                : port      &log;   # Source Port
         destination_h           : addr      &log;   # Destination IP Address
         destination_p           : port      &log;   # Destination Port
+        packet_correlation_id   : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
         encapsulation_version   : count     &log;   # Encapsulation protocol version supported
         socket_address          : addr      &log;   # Socket address IP address
         socket_port             : count     &log;   # Socket address port number
@@ -183,6 +187,7 @@ function set_service(c: connection, service: string) {
 ###################################################################################################
 event enip_header(c: connection,
                   is_orig: bool,
+                  packet_correlation_id: string,
                   command: count,
                   length: count,
                   session_handle: count,
@@ -211,6 +216,7 @@ event enip_header(c: connection,
         enip_item$destination_p = c$id$orig_p;
     }
 
+    enip_item$packet_correlation_id = packet_correlation_id;
     enip_item$enip_command_code = fmt("0x%02x",command);
     enip_item$enip_command = enip_commands[command];
     enip_item$length = length;
@@ -227,6 +233,7 @@ event enip_header(c: connection,
 ###################################################################################################
 event cip_header(c: connection,
                  is_orig: bool,
+                 packet_correlation_id: string,
                  cip_sequence_count: count,
                  service: count,
                  response: bool,
@@ -260,6 +267,7 @@ event cip_header(c: connection,
     if (cip_sequence_count != 0)
         cip_header_item$cip_sequence_count = cip_sequence_count;
 
+    cip_header_item$packet_correlation_id = packet_correlation_id;
     cip_header_item$cip_service_code = fmt("0x%02x",service);
     cip_header_item$cip_service = cip_services[service];
 
@@ -302,6 +310,7 @@ event cip_header(c: connection,
 ###################################################################################################
 event cip_io(c: connection,
              is_orig: bool,
+             packet_correlation_id: string,
              connection_identifier: count,
              sequence_number: count,
              data_length: count,
@@ -328,6 +337,7 @@ event cip_io(c: connection,
         cip_io_item$destination_p = c$id$orig_p;
     }
 
+    cip_io_item$packet_correlation_id = packet_correlation_id;
     cip_io_item$connection_id = fmt("0x%08x", connection_identifier);;
     cip_io_item$sequence_number = sequence_number;
     cip_io_item$data_length = data_length;
@@ -341,6 +351,7 @@ event cip_io(c: connection,
 ###################################################################################################
 event cip_identity(c: connection, 
                    is_orig: bool,
+                   packet_correlation_id: string,
                    encapsulation_version: count,
                    socket_address: count,
                    socket_port: count,
@@ -374,6 +385,8 @@ event cip_identity(c: connection,
         cip_identity_item$destination_h = c$id$orig_h;
         cip_identity_item$destination_p = c$id$orig_p;
     }
+
+    cip_identity_item$packet_correlation_id = packet_correlation_id;
 
     cip_identity_item$encapsulation_version = encapsulation_version;
     cip_identity_item$socket_address = count_to_v4_addr(socket_address);

@@ -21,4 +21,5 @@ flow ENIP_Flow(is_orig: bool) {
     datagram = ENIP_PDU(is_orig) withcontext(connection, this);
 }
 
+%include enip-utilities.pac
 %include enip-analyzer.pac

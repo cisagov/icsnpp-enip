@@ -7,6 +7,10 @@
 ##
 ## Copyright (c) 2023 Battelle Energy Alliance, LLC.  All rights reserved.
 
+%extern{
+    #include <sstream>
+    #include <random>
+%}
 %header{
 
     typedef struct CIP_Request_Path {
@@ -25,7 +29,6 @@
     uint32 get_number(uint8 size, uint8 x, const_bytestring data);
     CIP_Request_Path parse_request_path(const_bytestring data);
     CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint16 starting_location);
-
 %}
 
 %code{
@@ -157,6 +160,7 @@ refine flow ENIP_Flow += {
                 zeek::BifEvent::enqueue_enip_header(connection()->zeek_analyzer(),
                                                     connection()->zeek_analyzer()->Conn(),
                                                     ${enip_header.is_originator},
+                                                    zeek::make_intrusive<zeek::StringVal>(${enip_header.packet_correlation_id}),
                                                     ${enip_header.command},
                                                     ${enip_header.length},
                                                     ${enip_header.session_handle},
@@ -196,6 +200,7 @@ refine flow ENIP_Flow += {
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
                                                    ${cip_header.is_originator},
+                                                   zeek::make_intrusive<zeek::StringVal>(${cip_header.packet_correlation_id}),
                                                    ${cip_header.cip_sequence_count},
                                                    ${cip_header.service_code},
                                                    (${cip_header.request_or_response} == 1),
@@ -218,6 +223,7 @@ refine flow ENIP_Flow += {
                 zeek::BifEvent::enqueue_cip_io(connection()->zeek_analyzer(),
                                                connection()->zeek_analyzer()->Conn(),
                                                ${cip_io_item.is_originator},
+                                               zeek::make_intrusive<zeek::StringVal>(${cip_io_item.packet_correlation_id}),
                                                ${cip_io_item.sequenced_address_item.connection_identifier},
                                                ${cip_io_item.sequenced_address_item.encap_sequence_number},
                                                ${cip_io_item.connected_data_length},
@@ -236,6 +242,7 @@ refine flow ENIP_Flow += {
                 zeek::BifEvent::enqueue_cip_identity(connection()->zeek_analyzer(),
                                                      connection()->zeek_analyzer()->Conn(),
                                                      ${identity_item.is_originator},
+                                                     zeek::make_intrusive<zeek::StringVal>(${identity_item.packet_correlation_id}),
                                                      ${identity_item.encapsulation_version},
                                                      ${identity_item.socket_address.sin_addr},
                                                      ${identity_item.socket_address.sin_port},
@@ -498,6 +505,7 @@ refine flow ENIP_Flow += {
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
                                                    ${data.is_originator},
+                                                   zeek::make_intrusive<zeek::StringVal>(${data.packet_correlation_id}),
                                                    ${data.cip_sequence_count},
                                                    MULTIPLE_SERVICE,
                                                    false,
@@ -516,6 +524,7 @@ refine flow ENIP_Flow += {
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                        connection()->zeek_analyzer()->Conn(),
                                                        ${data.is_originator},
+                                                       zeek::make_intrusive<zeek::StringVal>(${data.packet_correlation_id}),
                                                        cip_sequence_count,
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        false,
@@ -547,6 +556,7 @@ refine flow ENIP_Flow += {
                 zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                    connection()->zeek_analyzer()->Conn(),
                                                    ${data.is_originator},
+                                                   zeek::make_intrusive<zeek::StringVal>(${data.packet_correlation_id}),
                                                    ${data.cip_sequence_count},
                                                    MULTIPLE_SERVICE,
                                                    true,
@@ -564,6 +574,7 @@ refine flow ENIP_Flow += {
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                        connection()->zeek_analyzer()->Conn(),
                                                        ${data.is_originator},
+                                                       zeek::make_intrusive<zeek::StringVal>(${data.packet_correlation_id}),
                                                        cip_sequence_count,
                                                        ${data.services[service_packet_location]} & 0x7f,
                                                        true,
