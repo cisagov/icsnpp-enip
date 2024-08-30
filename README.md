@@ -96,23 +96,24 @@ This log captures Ethernet/IP header information for every Ethernet/IP packet an
 
 #### Fields Captured
 
-| Field             | Type      | Description                                                   |
-| ----------------- |-----------|-------------------------------------------------------------- |
-| ts                | time      | Timestamp                                                     |
-| uid               | string    | Unique ID for this connection                                 |
-| id                | conn_id   | Default Zeek connection info (IP addresses, ports)            |
-| is_orig           | bool      | True if the packet is sent from the originator                |
-| source_h          | address   | Source IP address (see *Source and Destination Fields*)       |
-| source_p          | port      | Source port (see *Source and Destination Fields*)             |
-| destination_h     | address   | Destination IP address (see *Source and Destination Fields*)  |
-| destination_p     | port      | Destination port (see *Source and Destination Fields*)        |
-| enip_command_code | string    | Ethernet/IP command code                                      |
-| enip_command      | string    | Ethernet/IP command name                                      |
-| length            | count     | Length of ENIP data following header                          |
-| session_handle    | string    | Session identifier                                            |
-| enip_status       | string    | Ethernet/IP status code                                       |
-| sender_context    | string    | Sender context                                                |
-| options           | string    | Options flags                                                 |
+| Field                 | Type      | Description                                                   |
+| ----------------------|-----------|-------------------------------------------------------------- |
+| ts                    | time      | Timestamp                                                     |
+| uid                   | string    | Unique ID for this connection                                 |
+| id                    | conn_id   | Default Zeek connection info (IP addresses, ports)            |
+| is_orig               | bool      | True if the packet is sent from the originator                |
+| source_h              | address   | Source IP address (see *Source and Destination Fields*)       |
+| source_p              | port      | Source port (see *Source and Destination Fields*)             |
+| destination_h         | address   | Destination IP address (see *Source and Destination Fields*)  |
+| destination_p         | port      | Destination port (see *Source and Destination Fields*)        |
+| packet_correlation_id | string    | Ties ENIP headers to associated CIP packets                   |
+| enip_command_code     | string    | Ethernet/IP command code                                      |
+| enip_command          | string    | Ethernet/IP command name                                      |
+| length                | count     | Length of ENIP data following header                          |
+| session_handle        | string    | Session identifier                                            |
+| enip_status           | string    | Ethernet/IP status code                                       |
+| sender_context        | string    | Sender context                                                |
+| options               | string    | Options flags                                                 |
 
 ### CIP Header Log (cip.log)
 
@@ -132,6 +133,7 @@ This log captures CIP header information for every CIP packet and logs it to **c
 | source_p                  | port      | Source port (see *Source and Destination Fields*)             |
 | destination_h             | address   | Destination IP address (see *Source and Destination Fields*)  |
 | destination_p             | port      | Destination port (see *Source and Destination Fields*)        |
+| packet_correlation_id     | string    | Ties ENIP headers to associated CIP packets                   |
 | cip_sequence_count        | count     | CIP sequence number                                           |
 | direction                 | string    | Request or response                                           |
 | cip_service_code          | string    | CIP service code                                              |
@@ -163,6 +165,7 @@ This log captures CIP I/O (input-output) data for every CIP IO packet and logs i
 | source_p              | port      | Source port (see *Source and Destination Fields*)             |
 | destination_h         | address   | Destination IP address (see *Source and Destination Fields*)  |
 | destination_p         | port      | Destination port (see *Source and Destination Fields*)        |
+| packet_correlation_id | string    | Ties ENIP headers to associated CIP packets                   |
 | connection_id         | string    | Connection identifier                                         |
 | sequence_number       | count     | Sequence number within connection                             |
 | data_length           | count     | Length of data in io_data field                               |
@@ -186,6 +189,7 @@ This log captures important variables for CIP_Identity objects and logs them to 
 | source_p              | port      | Source Port (see *Source and Destination Fields*)             |
 | destination_h         | address   | Destination IP address (see *Source and Destination Fields*)  |
 | destination_p         | port      | Destination Port (see *Source and Destination Fields*)        |
+| packet_correlation_id | string    | Ties ENIP headers to associated CIP packets                   |
 | encapsulation_version | count     | Encapsulation protocol version supported                      |
 | socket_address        | addr      | Socket address IP address                                     |
 | socket_port           | count     | Socket address port number                                    |
