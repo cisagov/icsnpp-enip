@@ -26,7 +26,7 @@ signature dpd_enip_tcp {
   enable "ENIP_TCP"
 }
 
-signature dpd_enip_udp {
+signature dpd_enip_udp_client_to_server {
   ip-proto == udp
   src-port >= 1024
   dst-port == 2222, 44818
@@ -34,3 +34,10 @@ signature dpd_enip_udp {
   enable "ENIP_UDP"
 }
 
+signature dpd_enip_udp_server_to_client {
+  ip-proto == udp
+  src-port == 2222, 44818
+  dst-port >= 1024
+  payload /^[\x00\x04\x63\x64\x65\x66\x6f\x70\x72\x73]\x00[\x00-\xff]{6}[\x00\x01\x02\x03\x64\x65\x69\x6a]\x00{3}[\x00-\xff][\x00-\xff]{4}/
+  enable "ENIP_UDP"
+}
