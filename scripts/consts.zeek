@@ -213,13 +213,16 @@ export {
         [0x1B] = "Remove Member",
         [0x1C] = "Group Sync",
         [0x1D] = "Get Connection Point Member List",
-        [0x4B] = "Execute PCCC Service",
-        [0x4C] = "Read Data",
-        [0x4D] = "Write Data",
-        [0x4E] = "Read Write Modify Data",
-        [0x52] = "Read Data Fragmented",
-        [0x53] = "Write Data Fragmented",
-        [0x54] = "Forward Open",
+
+        # anything > 0x31 is class specific and not universal like is assumed here
+        # see https://github.com/cisagov/icsnpp-enip/issues/34
+        # [0x4B] = "Execute PCCC Service",
+        # [0x4C] = "Read Data",
+        # [0x4D] = "Write Data",
+        # [0x4E] = "Read Write Modify Data",
+        # [0x52] = "Read Data Fragmented",
+        # [0x53] = "Write Data Fragmented",
+        # [0x54] = "Forward Open",
     } &default = function(n: count): string {return "unknown"; };
 
     ###############################################################################################

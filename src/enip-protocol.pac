@@ -127,7 +127,7 @@ type ENIP_Target(command: uint16, packet_correlation_id: string) = case command 
 ##      enip.log file as defined in main.zeek.
 ## ------------------------------------------------------------------------------------------------
 type ENIP_Header(is_orig: bool, command: uint16, packet_correlation_id: string) = record {
-    #command                 : uint16;
+    #command                 : uint16; # This is pulled out at the ENIP_PDU level to determine TCP or UDP
     length                  : uint16;
     session_handle          : uint32;
     status                  : uint32;
