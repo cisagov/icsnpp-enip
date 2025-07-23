@@ -386,14 +386,12 @@ event get_attribute_single_response%(c: connection,
 ##      Event is generated for CIP service Set_Attribute_Single_Request 
 ## Event Data:
 ##      - c:                    connection  -> Zeek Connection Struct
-##      - attribute_id:         count       -> Identifies the attribute
 ##      - attribute_value:      string      -> Attribute data based on instance/class
 ## Default Output:
 ##      No defined log in main.zeek by default
 ## ------------------------------------------------------------------------------------------------
 event set_attribute_single_request%(c: connection,
                                     is_orig: bool,
-                                    attribute_id: count, 
                                     attribute_value: string%);
 
 ###################################################################################################
