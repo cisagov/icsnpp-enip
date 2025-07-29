@@ -1,6 +1,3 @@
-# Don't ignore baseline log files
-!tests/baseline/*/*.log
-
 # Development Machine Files
 .*.swp
 *.bak
@@ -29,3 +26,8 @@ build/
 # Misc
 *stub.spicy
 .inst.txt
+
+# Don't ignore baseline log files
+!tests/baseline/
+!tests/baseline/*/
+!tests/baseline/*/*.log
