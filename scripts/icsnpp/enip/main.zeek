@@ -120,26 +120,6 @@ export{
     };
     global log_cip_identity: event(rec: CIP_Identity_Item_Log);
     global log_policy_cip_identity: Log::PolicyHook;
-
-    ###############################################################################################
-    ########################  CIP_Multi_Service_Packet -> cip_multi.log  ##########################
-    ###############################################################################################
-    type CIP_Multi_Service_Packet: record {
-        ts              : time      &log;  # Timestamp of event
-        uid             : string    &log;  # Zeek unique ID for connection
-        id              : conn_id   &log;  # Zeek connection struct (addresses and ports)
-        is_orig         : bool      &log;  # the message came from the originator/client or the responder/server
-        source_h        : addr      &log;  # Source IP Address
-        source_p        : port      &log;  # Source Port
-        destination_h   : addr      &log;  # Destination IP Address
-        destination_p   : port      &log;  # Destination Port
-        direction       : string    &log;  # request or response
-        service_count   : count     &log;  # Number of services contained in the packet
-        service_list    : string    &log;  # Comma-separated list of service codes
-    };
-
-    global log_cip_multi: event(rec: CIP_Multi_Service_Packet);
-    global log_policy_cip_multi: Log::PolicyHook;
 }
 
 # Defines ENIP/CIP ports
@@ -190,10 +170,6 @@ event zeek_init() &priority=5 {
                                                 $path="cip_identity",
                                                 $policy=log_policy_cip_identity]);
 
-    Log::create_stream(ENIP::LOG_CIP_MULTI, [$columns=CIP_Multi_Service_Packet,
-                                             $ev=log_cip_multi,
-                                             $path="cip_multi",
-                                             $policy=log_policy_cip_multi]);
     #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
     #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
     # Monitor only the UDP Port assigned to implicit ENIP/CIP IO Messages
@@ -428,82 +404,4 @@ event cip_identity(c: connection,
     cip_identity_item$product_name = product_name;
     cip_identity_item$device_state = fmt("0x%04x", state);
     Log::write(LOG_CIP_IDENTITY, cip_identity_item);
-}
-
-###################################################################################################
-###################  Defines logging of multiple_service_request event  ###########################
-###################################################################################################
-
-event multiple_service_request(c: connection,
-                              is_orig: bool,
-                              service_count: count,
-                              service_list: string)
-{
-    set_service(c, "cip");
-
-    local msp: CIP_Multi_Service_Packet;
-    msp$ts  = network_time();
-    msp$uid = c$uid;
-    msp$id  = c$id;
-    msp$is_orig = is_orig;
-
-    if ( is_orig )
-    {
-        msp$source_h = c$id$orig_h;
-        msp$source_p = c$id$orig_p;
-        msp$destination_h = c$id$resp_h;
-        msp$destination_p = c$id$resp_p;
-    }
-    else
-    {
-        msp$source_h = c$id$resp_h;
-        msp$source_p = c$id$resp_p;
-        msp$destination_h = c$id$orig_h;
-        msp$destination_p = c$id$orig_p;
-    }
-
-    msp$direction = "request";
-    msp$service_count = service_count;
-    msp$service_list = service_list;
-
-    Log::write(LOG_CIP_MULTI, msp);
-}
-
-###################################################################################################
-##################  Defines logging of multiple_service_response event  ###########################
-###################################################################################################
-
-event multiple_service_response(c: connection,
-                               is_orig: bool,
-                               service_count: count,
-                               service_list: string)
-{
-    set_service(c, "cip");
-
-    local msp: CIP_Multi_Service_Packet;
-    msp$ts  = network_time();
-    msp$uid = c$uid;
-    msp$id  = c$id;
-    msp$is_orig = is_orig;
-
-    if ( is_orig )
-    {
-        msp$source_h = c$id$orig_h;
-        msp$source_p = c$id$orig_p;
-        msp$destination_h = c$id$resp_h;
-        msp$destination_p = c$id$resp_p;
-    }
-    else
-    {
-        msp$source_h = c$id$resp_h;
-        msp$source_p = c$id$resp_p;
-        msp$destination_h = c$id$orig_h;
-        msp$destination_p = c$id$orig_p;
-    }
-
-    msp$direction = "response";
-    msp$service_count = service_count;
-    msp$service_list = service_list;
-
-    Log::write(LOG_CIP_MULTI, msp);
 }
