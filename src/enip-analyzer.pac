@@ -515,10 +515,20 @@ refine flow ENIP_Flow += {
                                                    request_path.instance_id,
                                                    request_path.attribute_id);
 
-                // CIP Header event for each service within multiple service packet
+                // Build comma-separated list of service codes and generate CIP Header events for each
+                string service_list = "";
                 for(uint8 i=0; i < service_count;i++)
                 {
                     service_packet_location = ${data.service_offsets[i]} - (2*service_count) - 2;
+                    uint8 service_code = ${data.services[service_packet_location]} & 0x7f;
+
+                    // append to list
+                    if(i == 0)
+                        service_list = zeek::util::fmt("%d", service_code);
+                    else
+                        service_list += zeek::util::fmt(",%d", service_code);
+
+                    // enqueue CIP header per inner service
                     request_path = parse_request_multiple_service_packet(${data.services},service_packet_location+1);
 
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
@@ -526,13 +536,23 @@ refine flow ENIP_Flow += {
                                                        ${data.is_originator},
                                                        zeek::make_intrusive<zeek::StringVal>(${data.packet_correlation_id}),
                                                        cip_sequence_count,
-                                                       ${data.services[service_packet_location]} & 0x7f,
+                                                       service_code,
                                                        false,
                                                        UINT32_MAX,
                                                        UINT32_MAX,
                                                        request_path.class_id,
                                                        request_path.instance_id,
                                                        request_path.attribute_id);
+                }
+
+                // Emit multiple_service_request event itself
+                if ( ::multiple_service_request )
+                {
+                    zeek::BifEvent::enqueue_multiple_service_request(connection()->zeek_analyzer(),
+                                                                      connection()->zeek_analyzer()->Conn(),
+                                                                      ${data.is_originator},
+                                                                      service_count,
+                                                                      zeek::make_intrusive<zeek::StringVal>(service_list));
                 }
             }
 
@@ -566,23 +586,41 @@ refine flow ENIP_Flow += {
                                                    request_path.instance_id,
                                                    request_path.attribute_id);
 
-                // CIP Header event for each service within multiple service packet
+                // Build comma-separated list of service codes and generate CIP Header events for each
+                string service_list = "";
                 for(uint8 i=0; i < service_count;i++)
                 {
                     service_packet_location = ${data.service_offsets[i]} - (2*service_count) - 2;
+                    uint8 service_code = ${data.services[service_packet_location]} & 0x7f;
+
+                    // append to list
+                    if(i == 0)
+                        service_list = zeek::util::fmt("%d", service_code);
+                    else
+                        service_list += zeek::util::fmt(",%d", service_code);
 
                     zeek::BifEvent::enqueue_cip_header(connection()->zeek_analyzer(),
                                                        connection()->zeek_analyzer()->Conn(),
                                                        ${data.is_originator},
                                                        zeek::make_intrusive<zeek::StringVal>(${data.packet_correlation_id}),
                                                        cip_sequence_count,
-                                                       ${data.services[service_packet_location]} & 0x7f,
+                                                       service_code,
                                                        true,
                                                        ${data.services[service_packet_location + 2]},
                                                        UINT32_MAX,
                                                        request_path.class_id,
                                                        request_path.instance_id,
                                                        request_path.attribute_id);
+                }
+
+                // Emit multiple_service_response event itself
+                if ( ::multiple_service_response )
+                {
+                    zeek::BifEvent::enqueue_multiple_service_response(connection()->zeek_analyzer(),
+                                                                       connection()->zeek_analyzer()->Conn(),
+                                                                       ${data.is_originator},
+                                                                       service_count,
+                                                                       zeek::make_intrusive<zeek::StringVal>(service_list));
                 }
             }
             return true;
@@ -613,7 +651,6 @@ refine flow ENIP_Flow += {
                 zeek::BifEvent::enqueue_set_attribute_single_request(connection()->zeek_analyzer(),
                                                                      connection()->zeek_analyzer()->Conn(),
                                                                      ${data.is_originator},
-                                                                     ${data.attribute_id},
                                                                      to_stringval(${data.attribute_data}));
             }
             return true;

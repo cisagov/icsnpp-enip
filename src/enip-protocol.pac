@@ -755,14 +755,12 @@ type Get_Attribute_Single_Response(is_orig: bool) = record {
 ##      Modifies an attribute value.
 ##      CIP Service Code 0x10 - Request only (No Response Data)
 ## Message Format:
-##      - Attribute ID:             uint8               -> Identifies the attribute
 ##      - Attribute Data:           variable            -> Value of modified attribute
 ## Protocol Parsing:
-##      Sends attribute_id and attribute_data to the set_attribute_single_response event. Cannot 
+##      Sends attribute_data to the set_attribute_single_request event. Cannot 
 ##      do further processing on attribute data because it is instance/class specific
 ## ------------------------------------------------------------------------------------------------
 type Set_Attribute_Single_Request(is_orig: bool) = record {
-    attribute_id            : uint8;
     attribute_data          : bytestring &restofdata;
 } &let {
     is_originator: bool = is_orig;
