@@ -21,22 +21,22 @@ export{
     ##################################  ENIP_Header -> enip.log  ##################################
     ###############################################################################################
     type ENIP_Header: record {
-        ts                      : time      &log;   # Timestamp of event
-        uid                     : string    &log;   # Zeek unique ID for connection
-        id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
-        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
-        source_h                : addr      &log;   # Source IP Address
-        source_p                : port      &log;   # Source Port
-        destination_h           : addr      &log;   # Destination IP Address
-        destination_p           : port      &log;   # Destination Port
-        packet_correlation_id   : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
-        enip_command_code       : string    &log;   # Ethernet/IP Command Code (in hex)
-        enip_command            : string    &log;   # Ethernet/IP Command Name (see enip_commands)
-        length                  : count     &log;   # Length of ENIP data following header
-        session_handle          : string    &log;   # Sesesion identifier
-        enip_status             : string    &log;   # Status code (see enip_statuses)
-        sender_context          : string    &log;   # Sender context
-        options                 : string    &log;   # Options flags
+        ts                      : time      &log;   ##<Timestamp of event
+        uid                     : string    &log;   ##<Zeek unique ID for connection
+        id                      : conn_id   &log;   ##<Zeek connection struct (addresses and ports)
+        is_orig                 : bool      &log;   ##<the message came from the originator/client or the responder/server
+        source_h                : addr      &log;   ##<Source IP Address
+        source_p                : port      &log;   ##<Source Port
+        destination_h           : addr      &log;   ##<Destination IP Address
+        destination_p           : port      &log;   ##<Destination Port
+        packet_correlation_id   : string    &log;   ##<A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
+        enip_command_code       : string    &log;   ##<Ethernet/IP Command Code (in hex)
+        enip_command            : string    &log;   ##<Ethernet/IP Command Name (see enip_commands)
+        length                  : count     &log;   ##<Length of ENIP data following header
+        session_handle          : string    &log;   ##<Sesesion identifier
+        enip_status             : string    &log;   ##<Status code (see enip_statuses)
+        sender_context          : string    &log;   ##<Sender context
+        options                 : string    &log;   ##<Options flags
     };
     global log_enip: event(rec: ENIP_Header);
     global log_policy_enip: Log::PolicyHook;
@@ -45,27 +45,27 @@ export{
     ###################################  CIP_Header -> cip.log  ###################################
     ###############################################################################################
     type CIP_Header: record {
-        ts                          : time      &log;   # Timestamp of event
-        uid                         : string    &log;   # Zeek unique ID for connection
-        id                          : conn_id   &log;   # Zeek connection struct (addresses and ports)
-        is_orig                     : bool      &log;   # the message came from the originator/client or the responder/server
-        source_h                    : addr      &log;   # Source IP Address
-        source_p                    : port      &log;   # Source Port
-        destination_h               : addr      &log;   # Destination IP Address
-        destination_p               : port      &log;   # Destination Port
-        packet_correlation_id       : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
-        cip_sequence_count          : count     &log;   # CIP sequence number for transport
-        direction                   : string    &log;   # Request or Response
-        cip_service_code            : string    &log;   # CIP service code (in hex)
-        cip_service                 : string    &log;   # CIP service name (see cip_services)
-        cip_status_code             : string    &log;   # CIP status code (in hex)
-        cip_status                  : string    &log;   # CIP status description (see cip_statuses)
-        cip_extended_status_code    : string    &log;   # CIP extended status code (in hex)
-        cip_extended_status         : string    &log;   # CIP extended status description (see cip_extended_statuses)
-        class_id                    : string    &log;   # CIP Request Path - Class ID
-        class_name                  : string    &log;   # CIP Request Path - Class Name (see cip_classes)
-        instance_id                 : string    &log;   # CIP Request Path - Instance ID
-        attribute_id                : string    &log;   # CIP Request Path - Attribute ID
+        ts                          : time      &log;   ##<Timestamp of event
+        uid                         : string    &log;   ##<Zeek unique ID for connection
+        id                          : conn_id   &log;   ##<Zeek connection struct (addresses and ports)
+        is_orig                     : bool      &log;   ##<the message came from the originator/client or the responder/server
+        source_h                    : addr      &log;   ##<Source IP Address
+        source_p                    : port      &log;   ##<Source Port
+        destination_h               : addr      &log;   ##<Destination IP Address
+        destination_p               : port      &log;   ##<Destination Port
+        packet_correlation_id       : string    &log;   ##<A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
+        cip_sequence_count          : count     &log;   ##<CIP sequence number for transport
+        direction                   : string    &log;   ##<Request or Response
+        cip_service_code            : string    &log;   ##<CIP service code (in hex)
+        cip_service                 : string    &log;   ##<CIP service name (see cip_services)
+        cip_status_code             : string    &log;   ##<CIP status code (in hex)
+        cip_status                  : string    &log;   ##<CIP status description (see cip_statuses)
+        cip_extended_status_code    : string    &log;   ##<CIP extended status code (in hex)
+        cip_extended_status         : string    &log;   ##<CIP extended status description (see cip_extended_statuses)
+        class_id                    : string    &log;   ##<CIP Request Path - Class ID
+        class_name                  : string    &log;   ##<CIP Request Path - Class Name (see cip_classes)
+        instance_id                 : string    &log;   ##<CIP Request Path - Instance ID
+        attribute_id                : string    &log;   ##<CIP Request Path - Attribute ID
     };
     global log_cip: event(rec: CIP_Header);
     global log_policy_cip: Log::PolicyHook;
@@ -74,19 +74,19 @@ export{
     ##################################  CIP_IO_Log -> cip_io.log  #################################
     ###############################################################################################
     type CIP_IO_Log: record {
-        ts                      : time      &log;   # Timestamp of event
-        uid                     : string    &log;   # Zeek unique ID for connection
-        id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
-        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
-        source_h                : addr      &log;   # Source IP Address
-        source_p                : port      &log;   # Source Port
-        destination_h           : addr      &log;   # Destination IP Address
-        destination_p           : port      &log;   # Destination Port
-        packet_correlation_id   : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
-        connection_id           : string    &log;   # CIP Connection Identifier
-        sequence_number         : count     &log;   # CIP Sequence Number with Connection
-        data_length             : count     &log;   # Length of io_data field
-        io_data                 : string    &log;   # CIP IO Data
+        ts                      : time      &log;   ##<Timestamp of event
+        uid                     : string    &log;   ##<Zeek unique ID for connection
+        id                      : conn_id   &log;   ##<Zeek connection struct (addresses and ports)
+        is_orig                 : bool      &log;   ##<the message came from the originator/client or the responder/server
+        source_h                : addr      &log;   ##<Source IP Address
+        source_p                : port      &log;   ##<Source Port
+        destination_h           : addr      &log;   ##<Destination IP Address
+        destination_p           : port      &log;   ##<Destination Port
+        packet_correlation_id   : string    &log;   ##<A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
+        connection_id           : string    &log;   ##<CIP Connection Identifier
+        sequence_number         : count     &log;   ##<CIP Sequence Number with Connection
+        data_length             : count     &log;   ##<Length of io_data field
+        io_data                 : string    &log;   ##<CIP IO Data
     };
     global log_cip_io: event(rec: CIP_IO_Log);
     global log_policy_cip_io: Log::PolicyHook;
@@ -95,28 +95,28 @@ export{
     #########################  CIP_Identity_Item_Log -> cip_identity.log  #########################
     ###############################################################################################
     type CIP_Identity_Item_Log: record {
-        ts                      : time      &log;   # Timestamp of event
-        uid                     : string    &log;   # Zeek unique ID for connection
-        id                      : conn_id   &log;   # Zeek connection struct (addresses and ports)
-        is_orig                 : bool      &log;   # the message came from the originator/client or the responder/server
-        source_h                : addr      &log;   # Source IP Address
-        source_p                : port      &log;   # Source Port
-        destination_h           : addr      &log;   # Destination IP Address
-        destination_p           : port      &log;   # Destination Port
-        packet_correlation_id   : string    &log;   # A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
-        encapsulation_version   : count     &log;   # Encapsulation protocol version supported
-        socket_address          : addr      &log;   # Socket address IP address
-        socket_port             : count     &log;   # Socket address port number
-        vendor_id               : count     &log;   # Vendor ID
-        vendor_name             : string    &log;   # Name of Vendor (see cip_vendors)
-        device_type_id          : count     &log;   # Device type ID
-        device_type_name        : string    &log;   # Name of device type (see cip_device_types)
-        product_code            : count     &log;   # Product code assigned to device
-        revision                : string    &log;   # Device revision (major.minor)
-        device_status           : string    &log;   # Current status of device (see cip_statuses)
-        serial_number           : string    &log;   # Serial number of device
-        product_name            : string    &log;   # Human readable description of device
-        device_state            : string    &log;   # Current state of the device
+        ts                      : time      &log;   ##<Timestamp of event
+        uid                     : string    &log;   ##<Zeek unique ID for connection
+        id                      : conn_id   &log;   ##<Zeek connection struct (addresses and ports)
+        is_orig                 : bool      &log;   ##<the message came from the originator/client or the responder/server
+        source_h                : addr      &log;   ##<Source IP Address
+        source_p                : port      &log;   ##<Source Port
+        destination_h           : addr      &log;   ##<Destination IP Address
+        destination_p           : port      &log;   ##<Destination Port
+        packet_correlation_id   : string    &log;   ##<A correlation ID that ties ENIP headers to associated CIP packets (packet rather than connection based)
+        encapsulation_version   : count     &log;   ##<Encapsulation protocol version supported
+        socket_address          : addr      &log;   ##<Socket address IP address
+        socket_port             : count     &log;   ##<Socket address port number
+        vendor_id               : count     &log;   ##<Vendor ID
+        vendor_name             : string    &log;   ##<Name of Vendor (see cip_vendors)
+        device_type_id          : count     &log;   ##<Device type ID
+        device_type_name        : string    &log;   ##<Name of device type (see cip_device_types)
+        product_code            : count     &log;   ##<Product code assigned to device
+        revision                : string    &log;   ##<Device revision (major.minor)
+        device_status           : string    &log;   ##<Current status of device (see cip_statuses)
+        serial_number           : string    &log;   ##<Serial number of device
+        product_name            : string    &log;   ##<Human readable description of device
+        device_state            : string    &log;   ##<Current state of the device
     };
     global log_cip_identity: event(rec: CIP_Identity_Item_Log);
     global log_policy_cip_identity: Log::PolicyHook;
