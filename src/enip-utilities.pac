@@ -34,8 +34,8 @@ enip-analyzer.pac binpac file.
     //
     // The implemenation was taken from: https://lowrey.me/guid-generation-in-c-11/
     //
-    std::string generateId() {
-        std::stringstream ss;
+    hilti::rt::String generateId() {
+        hilti::rt::Stringstream ss;
         for (auto i = 0; i < ID_LEN; i++) {
             // Generate a random char
             std::random_device rd;
@@ -44,7 +44,7 @@ enip-analyzer.pac binpac file.
             const auto rc = dis(gen);
 
             // Hex representaton of random char
-            std::stringstream hexstream;
+            hilti::rt::Stringstream hexstream;
             hexstream << std::hex << rc;
             auto hex = hexstream.str();
             ss << (hex.length() < 2 ? '0' + hex : hex);
