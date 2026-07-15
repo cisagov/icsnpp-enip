@@ -271,8 +271,9 @@ event cip_header(c: connection,
 
     cip_header_item$packet_correlation_id = packet_correlation_id;
     cip_header_item$cip_service_code = fmt("0x%02x",service);
-    cip_header_item$cip_service = cip_services[service];
-
+    #cip_header_item$cip_service = cip_services[service];
+    cip_header_item$cip_service = cip_service_name(service, class_id);
+    
     if(response)
     {
         cip_header_item$direction = "response";

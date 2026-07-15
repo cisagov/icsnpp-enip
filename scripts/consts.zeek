@@ -225,6 +225,167 @@ export {
         # [0x54] = "Forward Open",
     } &default = function(n: count): string {return "unknown"; };
 
+    const cip_class_services: table[count, count] of string = {
+        # Identity, class 0x01
+        [0x01, 0x4B] = "Flash LEDs",
+        [0x01, 0x4C] = "Certificate Challenge",
+        
+        # Message Router, class 0x02
+        [0x02, 0x4B] = "Symbolic Translation",
+        [0x02, 0x4C] = "Send Recieve Fragment",
+        
+        # Connection, class 0x05
+        [0x05, 0x4B] = "Connection Bind",
+        [0x05, 0x4C] = "Producing Application Lookup",
+        [0x05, 0x4E] = "Safety Close",
+        [0x05, 0x54] = "Safety Open",
+
+        # Connection Manager, class 0x06
+        [0x06, 0x4E] = "Forward Close",
+        [0x06, 0x52] = "Unconnected Send",
+        [0x06, 0x54] = "Forward Open",
+        [0x06, 0x56] = "Get Connection Data",
+        [0x06, 0x57] = "Search Connection Data",
+        [0x06, 0x5A] = "Get Connection Owner",
+        [0x06, 0x5B] = "Large Forward Open",
+        [0x06, 0x5C] = "Concurrent Forward Open",
+        [0x06, 0x5D] = "Large Concurrent Forward Open",
+        [0x06, 0x5E] = "Concurrent Forward Close",
+
+        # Parameter, class 0x0F
+        [0x0F, 0x4B] = "Get Enum String",
+
+        # Acknowledge Handler, class 0x2B
+        [0x2B, 0x4B] = "Add AckData Path",
+        [0x2B, 0x4C] = "Remove AckData Path",
+
+        # S-Device Supervisor, class 0x30
+        [0x30, 0x4B] = "Abort",
+        [0x30, 0x4C] = "Recover",
+        [0x30, 0x4E] = "Perform Diagnostics",
+
+        # S-Analog Sensor, class 0x31
+        [0x31, 0x4B] = "Zero Adjust",
+        [0x31, 0x4C] = "Gain Adjust",
+
+        # S-Gas Calibration, class 0x34
+        [0x34, 0x4B] = "Get All Instances",
+
+        # File, class 0x37
+        [0x37, 0x4B] = "Initiate Upload",
+        [0x37, 0x4C] = "Initiate Download",
+        [0x37, 0x4D] = "Initiate Partial Read",
+        [0x37, 0x4E] = "Initiate Partial Write",
+        [0x37, 0x4F] = "Upload Transfer",
+        [0x37, 0x50] = "Download Transfer",
+        [0x37, 0x51] = "Clear File",
+
+        # S-Partial Pressure, class 0x38
+        [0x38, 0x4B] = "Create Range",
+        [0x38, 0x4C] = "Get Instance List",
+        [0x38, 0x4D] = "Get Pressures",
+        [0x38, 0x4E] = "Get All Pressures",
+        [0x38, 0x4F] = "Group Enable",
+
+        # S-Sensor Calibration, class 0x40
+        [0x40, 0x4B] = "Get All Instances",
+
+        # Motion Device Axis Object, class 0x42
+        [0x42, 0x4B] = "Get Axis Attributes List",
+        [0x42, 0x4C] = "Set Axis Attributes List",
+        [0x42, 0x4D] = "Set Cyclic Write List",
+        [0x42, 0x4E] = "Set Cyclic Read List",
+        [0x42, 0x4F] = "Run Motor Test",
+        [0x42, 0x50] = "Get Motor Test Data",
+        [0x42, 0x51] = "Run Inertia Test",
+        [0x42, 0x52] = "Get Inertia Test Data",
+        [0x42, 0x53] = "Run Hookup Test",
+        [0x42, 0x54] = "Get Hookup Test Data",
+
+        # Modbus Object, class 0x44
+        [0x44, 0x4B] = "Read Discrete Inputs",
+        [0x44, 0x4C] = "Read Coils",
+        [0x44, 0x4D] = "Read Input Registers",
+        [0x44, 0x4E] = "Read Holding Registers",
+        [0x44, 0x4F] = "Write Coils",
+        [0x44, 0x50] = "Write Holding Registers",
+        [0x44, 0x51] = "Modbus Passthrough",
+
+        # Target Connection, classs 0x4D
+        [0x4D, 0x4C] = "Connection Read",
+
+        # DLR, class 0x47
+        [0x47, 0x4B] = "Verify Fault Location",
+        [0x47, 0x4C] = "Clear Rapid Faults",
+        [0x47, 0x4D] = "Restart Sign On",
+        [0x47, 0x4E] = "Clear Gateway Partial Fault",
+
+        # Base Energy, Class 0x4E
+        [0x4E, 0x4B] = "Start Metering",
+        [0x4E, 0x4C] = "Stop Metering",
+
+        # Power Managment, class 0x53
+        [0x53, 0x4D] = "Power Managment",
+        [0x53, 0x4E] = "Set Pass Code",
+        [0x53, 0x4F] = "Clear Pass Code",
+
+        # Power Curtailment, class 0x5C
+        [0x5C, 0x4B] = "Establish Ownership",
+        [0x5C, 0x4C] = "Release Ownership",
+        [0x5C, 0x4D] = "Change Ownership",
+        [0x5C, 0x4E] = "Go To Level",
+        [0x5C, 0x4F] = "Go To Level Query",
+        [0x5C, 0x50] = "Capture Level",
+        [0x5C, 0x51] = "Remove Level",
+        [0x5C, 0x52] = "Revise Level",
+        [0x5C, 0x53] = "Read Level",
+        [0x5C, 0x54] = "Write Level",
+
+        # PCCC class, class 0x67
+        [0x67, 0x4B] = "Execute PCCC Service",
+
+        # Connection Configuration, class 0xF3
+        [0xF3, 0x4B] = "Kick Timer",
+        [0xF3, 0x4C] = "Open Connection",
+        [0xF3, 0x4D] = "Close Connection",
+        [0xF3, 0x4E] = "Stop Connection",
+        [0xF3, 0x4F] = "Change Start",
+        [0xF3, 0x50] = "Get Status",
+        [0xF3, 0x51] = "Change Complete",
+        [0xF3, 0x52] = "Audit Changes",
+        
+        # TCP/IP Interface, class 0xF5
+        [0xF5, 0x4C] = "Set Port Admin State",
+        [0xF5, 0x4D] = "Set Protocol Admin State",
+
+        # Ethernet Link, class 0xF6
+        [0xF6, 0x4C] = "Get and Clear",
+
+        # Process Device Diagnostics, class 0x108
+        [0x108, 0x4B] = "Reset Diagnostics Counter",
+        [0x108, 0x4C] = "Get Next Active Instance",
+        [0x108, 0x4D] = "Get Active Instances",
+        [0x108, 0x4E] = "Get Instances By User Diagnostic Group",
+        [0x108, 0x4F] = "Get Active Instances By Status Signal",
+        [0x108, 0x50] = "Get Instances By Component",
+
+
+    } &default = function(class_id: count, service: count): string { return "unknown"; };
+
+
+    function cip_service_name(service: count, class_id: count): string
+    {
+        # Common services
+        if ( service < 0x31 )
+            return cip_services[service];
+
+        # Object specific services
+        if ( class_id != UINT32_MAX )
+            return cip_class_services[class_id, service];
+
+        return "unknown";
+    }
+
     ###############################################################################################
     #######################################  CIP Class IDs  #######################################
     ###############################################################################################
@@ -310,6 +471,10 @@ export {
         [0x5D] = "CIP Security",
         [0x5E] = "EtherNet/IP Security",
         [0x5F] = "Certificate Management",
+        [0x60] = "Authority",
+        [0x61] = "Password Authenticator",
+        [0x62] = "Certificate Authenticator",
+        [0x63] = "Ingress Egress",
         [0x67] = "PCCC Class",
         [0xF0] = "ControlNet",
         [0xF1] = "ControlNet Keeper",
@@ -320,6 +485,28 @@ export {
         [0xF6] = "Ethernet Link",
         [0xF7] = "CompoNet",
         [0xF8] = "CompoNet Repeater",
+        [0xF9] = "HART Master Port",
+        [0xFA] = "I/O Aggregation",
+        [0x100] = "Protection Trip",
+        [0x101] = "Protection Alarm",
+        [0x102] = "Circuit Breaker Supervisor",
+        [0x103] = "Circuit Breaker Statistics",
+        [0x104] = "Electrical Demand",
+        [0x105] = "Electrical Statistics",
+        [0x106] = "Machine Base Data",
+        [0x107] = "HART Process Device",
+        [0x108] = "Process Device Diagnostics",
+        [0x109] = "LLDP Management",
+        [0x10A] = "LLDP Data Table",
+        [0x10B] = "IO-Link Service Parameter",
+        [0x10C] = "IO-Link Master PHY",
+        [0x10D] = "IO-Link Device PHY",
+        [0x10E] = "Pilot Light Supervisor",
+        [0x10F] = "Select Line Link",
+        [0x110] = "In-Cabinet Actual Topology",
+        [0x111] = "In-Cabinet Commissioning",
+        [0x112] = "Process Measurement Value",
+        [0x113] = "Process Totalized Value",
     } &default = function(n: count): string {return "unknown"; };
 
     ###############################################################################################
