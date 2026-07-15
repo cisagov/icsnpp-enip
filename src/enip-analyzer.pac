@@ -10,6 +10,7 @@
 %extern{
     #include <sstream>
     #include <random>
+    #include <hilti/rt/libhilti.h>
 %}
 %header{
 
