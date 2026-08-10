@@ -9,13 +9,7 @@ if [ -n "${zeek_dist}" ]; then
     if [ "$1" = "zeekpath" ]; then
         ${zeek_dist}/build/zeek-path-dev
     elif [ "$1" = "zeek_plugin_path" ]; then
-        # Modern Zeek plugin builds place __zeek_plugin__ in the build
-        # directory.  Older builds used the source directory.
-        if [ -f "${base}/../../build/__zeek_plugin__" ]; then
-            ( cd ${base}/../../build && pwd )
-        else
-            ( cd ${base}/../.. && pwd )
-        fi
+        ( cd ${base}/../.. && pwd )
     elif [ "$1" = "path" ]; then
         echo ${zeek_dist}/build/src:${zeek_dist}/aux/btest:${base}/:${zeek_dist}/aux/zeek-cut:$PATH
     else
@@ -35,12 +29,7 @@ else
         # Combine the local tree and the system-wide path. This allows
         # us to test on a local build or an installation made via zkg,
         # which squirrels away the build. --cpk
-        if [ -f "${base}/../../build/__zeek_plugin__" ]; then
-            local_plugin_dir=$(cd ${base}/../../build && pwd)
-        else
-            local_plugin_dir=$(cd ${base}/../.. && pwd)
-        fi
-        echo "${local_plugin_dir}:$(zeek-config --plugin_dir)"
+        echo "$(cd ${base}/../.. && pwd):$(zeek-config --plugin_dir)"
     elif [ "$1" = "path" ]; then
         echo ${PATH}
     else
