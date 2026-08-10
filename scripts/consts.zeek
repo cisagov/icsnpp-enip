@@ -232,7 +232,7 @@ export {
         
         # Message Router, class 0x02
         [0x02, 0x4B] = "Symbolic Translation",
-        [0x02, 0x4C] = "Send Recieve Fragment",
+        [0x02, 0x4C] = "Send Receive Fragment",
         
         # Connection, class 0x05
         [0x05, 0x4B] = "Connection Bind",
@@ -324,8 +324,8 @@ export {
         [0x4E, 0x4B] = "Start Metering",
         [0x4E, 0x4C] = "Stop Metering",
 
-        # Power Managment, class 0x53
-        [0x53, 0x4D] = "Power Managment",
+        # Power Management, class 0x53
+        [0x53, 0x4D] = "Power Management",
         [0x53, 0x4E] = "Set Pass Code",
         [0x53, 0x4F] = "Clear Pass Code",
 
@@ -376,7 +376,7 @@ export {
     function cip_service_name(service: count, class_id: count): string
     {
         # Common services
-        if ( service < 0x31 )
+        if ( service <= 0x31 )
             return cip_services[service];
 
         # Object specific services
