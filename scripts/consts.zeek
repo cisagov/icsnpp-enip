@@ -376,7 +376,7 @@ export {
     function cip_service_name(service: count, class_id: count): string
     {
         # Common services
-        if ( service <= 0x31 )
+        if ( service < 0x31 )
             return cip_services[service];
 
         # Object specific services
