@@ -35,12 +35,19 @@ enip-analyzer.pac binpac file.
     // The implemenation was taken from: https://lowrey.me/guid-generation-in-c-11/
     //
     std::string generateId() {
+        // Constructed once (function-static) rather than per-iteration:
+        // random_device is a seed source, not a PRNG, and re-seeding a
+        // fresh generator every iteration is both slow (repeated entropy
+        // syscalls) and risks producing identical bytes if random_device
+        // falls back to a deterministic sequence on a given platform.
+        // Zeek's packet-analysis path is single-threaded, so static
+        // (rather than thread_local) is safe here.
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        static std::uniform_int_distribution<> dis(0, 255);
+
         std::stringstream ss;
         for (auto i = 0; i < ID_LEN; i++) {
-            // Generate a random char
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(0, 255);
             const auto rc = dis(gen);
 
             // Hex representaton of random char
