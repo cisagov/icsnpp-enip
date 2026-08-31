@@ -126,7 +126,9 @@ This log captures Ethernet/IP header information for every Ethernet/IP packet an
 
 #### Overview
 
-This log captures CIP header information for every CIP packet and logs it to **cip.log**.
+This log captures CIP header information for every CIP packet and logs it to **cip.log**. Identical
+services nested in the same Multiple Service Packet are written once, with their total recorded in
+`occurrence_count`.
 
 #### Fields Captured
 
@@ -153,6 +155,7 @@ This log captures CIP header information for every CIP packet and logs it to **c
 | class_name                | string    | CIP request path - class name                                 |
 | instance_id               | string    | CIP request path - instance ID                                |
 | attribute_id              | string    | CIP request path - attribute ID                               |
+| occurrence_count          | count     | Number of identical CIP records in the same packet            |
 
 ### CIP I/O Log (cip_io.log)
 
