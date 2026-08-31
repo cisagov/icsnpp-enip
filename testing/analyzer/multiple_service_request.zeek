@@ -4,6 +4,6 @@
 # @TEST-EXEC: btest-diff cip.log
 # @TEST-EXEC: btest-diff enip.log
 #
-# @TEST-DOC: Test ENIP analyzer with multiple services request.
+# @TEST-DOC: Test ENIP analyzer deduplicates identical nested services in a multiple service request.
 
 @load icsnpp/enip

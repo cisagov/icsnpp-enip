@@ -66,6 +66,7 @@ export{
         class_name                  : string    &log;   ##<CIP Request Path - Class Name (see cip_classes)
         instance_id                 : string    &log;   ##<CIP Request Path - Instance ID
         attribute_id                : string    &log;   ##<CIP Request Path - Attribute ID
+        occurrence_count            : count     &log;   ##<Number of identical CIP records in this packet
     };
     global log_cip: event(rec: CIP_Header);
     global log_policy_cip: Log::PolicyHook;
@@ -243,7 +244,8 @@ event cip_header(c: connection,
                  status_extended: count,
                  class_id: count,
                  instance_id: count,
-                 attribute_id: count){
+                 attribute_id: count,
+                 occurrence_count: count){
 
     set_service(c, "cip");
     local cip_header_item: CIP_Header;
@@ -270,6 +272,7 @@ event cip_header(c: connection,
         cip_header_item$cip_sequence_count = cip_sequence_count;
 
     cip_header_item$packet_correlation_id = packet_correlation_id;
+    cip_header_item$occurrence_count = occurrence_count;
     cip_header_item$cip_service_code = fmt("0x%02x",service);
     #cip_header_item$cip_service = cip_services[service];
     cip_header_item$cip_service = cip_service_name(service, class_id);

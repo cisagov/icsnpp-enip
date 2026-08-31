@@ -48,6 +48,7 @@ event enip_header%(c: connection,
 ##      - class_id              count       -> CIP Request Path - Class ID
 ##      - instance_id           count       -> CIP Request Path - Instance ID
 ##      - attribute_id          count       -> CIP Request Path - Attribute ID
+##      - occurrence_count      count       -> Number of identical CIP records in this packet
 ## Default Output:
 ##      Writes to log file cip.log
 ## ------------------------------------------------------------------------------------------------
@@ -61,7 +62,8 @@ event cip_header%(c: connection,
                   status_extended: count,
                   class_id: count,
                   instance_id: count,
-                  attribute_id: count%);
+                  attribute_id: count,
+                  occurrence_count: count%);
 
 ## ------------------------------------------cip-identity------------------------------------------
 ## Event Description:
