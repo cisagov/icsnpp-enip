@@ -29,7 +29,7 @@
 
 
     uint32 get_unsigned(const_bytestring data);
-    uint32 get_number(uint8 size, uint8 x, const_bytestring data);
+    uint32 get_number(uint8 size, uint16 x, const_bytestring data);
     CIP_Request_Path parse_request_path(const_bytestring data);
     CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint16 starting_location);
 %}
@@ -62,7 +62,9 @@
         else if (size == 1)
             return (data[x+1] << 8) | data[x];
         else if (size == 2)
-            return (data[x+3] << 24) | (data[x+2] << 13) | (data[x+1] << 8) | data[x];
+            return (static_cast<uint32>(data[x+3]) << 24) |
+                   (static_cast<uint32>(data[x+2]) << 16) |
+                   (static_cast<uint32>(data[x+1]) << 8) | data[x];
 
         return UINT32_MAX;
     }
