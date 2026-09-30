@@ -87,13 +87,56 @@ tar xvzf build/Zeek_Enip.tgz -C $ZEEK_PLUGIN_PATH
 
 ## Logging Capabilities
 
-It its default configuration, this parser will only log Ethernet/IP and CIP packets on ports 2222 and 44818. This decision was made due to the false positives generated when a signature-only based detection system was used.
+In its default configuration, this parser processes Ethernet/IP and CIP traffic on UDP port 2222 and TCP/UDP port 44818. Zeek assigns traffic on these configured ports directly to the appropriate ENIP analyzer.
 
-If users know of Ethernet/IP and CIP traffic that operate on ports other than 2222 or 44818, there are two options:
-* Allow signature detection on additional, known ports only:
-  * In [scripts/icsnpp/enip/dpd.sig](scripts/icsnpp/enip/dpd.sig): add the known Ethernet/IP and CIP port numbers to the lines: `dst-port == 2222, 44818`
-* Allow signature detection on all ports (may produce false positive):
-  * In [scripts/icsnpp/enip/dpd.sig](scripts/icsnpp/enip/dpd.sig): replace the lines: `dst-port == 2222, 44818` with `dst-port >= 1024`
+### Configuring a Non-Standard Port
+
+Some deployments run Ethernet/IP on a non-standard port. To configure one, update the port sets in [scripts/icsnpp/enip/main.zeek](scripts/icsnpp/enip/main.zeek).
+
+For ENIP over TCP, add the custom port to both `ports` and `tcp_ports`. For example, to process ENIP on TCP port 12345:
+
+```zeek
+const ports = {
+    2222/udp,
+    12345/tcp,
+    44818/tcp,
+    44818/udp,
+};
+
+const tcp_ports = {
+    12345/tcp,
+    44818/tcp,
+};
+```
+
+For ENIP over UDP, add the custom port to both `ports` and `udp_ports`:
+
+```zeek
+const ports = {
+    2222/udp,
+    12345/udp,
+    44818/tcp,
+    44818/udp,
+};
+
+const udp_ports = {
+    2222/udp,
+    12345/udp,
+    44818/udp,
+};
+```
+
+The `ports` set adds the port to Zeek's `likely_server_ports`, which helps Zeek determine the client and server when the beginning of a connection is missing. The transport-specific `tcp_ports` or `udp_ports` set assigns traffic on the port to the corresponding ENIP analyzer. Adding a port only to `ports` does not enable ENIP parsing.
+
+Only add a custom UDP port to `udp_implicit_ports` when that port carries implicit CIP I/O traffic.
+
+Configured ports should be dedicated to Ethernet/IP. Because the analyzer is assigned by port, non-ENIP traffic using a configured port may cause protocol violations or misleading results. After changing the sets, deploy the updated `main.zeek` file and restart Zeek. A C++ plugin rebuild is not required for this script-only change. Package upgrades may overwrite local package modifications, so preserve and reapply the configuration as part of the deployment process.
+
+#### Signature Detection
+
+The plugin uses both port-based analyzer registration in `main.zeek` and payload signatures in [scripts/icsnpp/enip/dpd.sig](scripts/icsnpp/enip/dpd.sig). Adding a custom port to the sets described above enables port-based detection.
+
+To also include the custom port in signature detection, add it to the `dst-port` list in `dpd_enip_tcp` for TCP. For UDP, add it to the `dst-port` list in `dpd_enip_udp_client_to_server` and the `src-port` list in `dpd_enip_udp_server_to_client`.
 
 ### ENIP Header Log (enip.log)
 
