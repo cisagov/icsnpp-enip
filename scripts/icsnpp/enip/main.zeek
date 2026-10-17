@@ -171,8 +171,8 @@ event zeek_init() &priority=5 {
                                                 $path="cip_identity",
                                                 $policy=log_policy_cip_identity]);
 
-    #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
-    #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
+    Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
+    Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
     # Monitor only the UDP Port assigned to implicit ENIP/CIP IO Messages
     Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_implicit_ports);
 }
