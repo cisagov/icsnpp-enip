@@ -5,11 +5,66 @@
 #include <zeek/Reporter.h>
 #include "events.bif.h"
 
+namespace {
+  // CIP Vol 2 encapsulation header, 24 bytes, little-endian:
+  //   0-1  command   2-3  length   4-7  session handle   8-11 status
+  //   12-19 sender context        20-23 options (shall be 0)
+  constexpr size_t ENIP_HEADER_LEN = 24;
+  // `length` counts only the data AFTER the header. Bounding it so that
+  // header + data still fits a uint16 (0xFFFF - 24 = 65511) is the largest
+  // single PDU the encapsulation layer can describe. Weak as a filter on its
+  // own -- it rejects 24 of 65536 values -- but free, and it stops the parse
+  // loop from parking on a 64 KB phantom.
+  constexpr size_t ENIP_MAX_DATA_LEN = 0xFFFF - ENIP_HEADER_LEN;
+
+  // The command codes this package's own grammar models (src/consts.pac
+  // `command_codes`), MINUS NOP (0x0000). NOP is legal, but `00 00` is far too
+  // common in binary payload to lock onto during a resync, and a NOP carries no
+  // data — skipping one costs nothing, locking onto a false one costs a PDU.
+  // Deliberately derived from the grammar's enum, not from the spec at large:
+  // a header this check accepts but the grammar cannot parse would trade a
+  // silent skip for an analyzer violation.
+  inline bool plausible_command(uint16_t command)
+  {
+      switch ( command )
+      {
+          case 0x0004:  // ListServices
+          case 0x0063:  // ListIdentity
+          case 0x0064:  // ListInterfaces
+          case 0x0065:  // RegisterSession
+          case 0x0066:  // UnRegisterSession
+          case 0x006F:  // SendRRData
+          case 0x0070:  // SendUnitData
+          case 0x00C8:  // StartDTLS
+              return true;
+          default:
+              return false;
+      }
+  }
+
+  // Three independent constraints: a modelled command (8 of 65536 values,
+  // ~2^-13), a length inside the encapsulation bound (near-free), and a zero
+  // Options field (2^-32), which CIP Vol 2 requires to be 0 for every command.
+  // Roughly 2^-45 of arbitrary payload passes, which is what makes scanning
+  // byte-by-byte for a boundary safe rather than a way to invent PDUs.
+  inline bool looks_like_encap_header(const u_char* p)
+  {
+      const uint16_t command = static_cast<uint16_t>(p[0] | (p[1] << 8));
+      if ( ! plausible_command(command) )
+          return false;
+      const size_t length = p[2] | (static_cast<size_t>(p[3]) << 8);
+      if ( length > ENIP_MAX_DATA_LEN )
+          return false;
+      return p[20] == 0 && p[21] == 0 && p[22] == 0 && p[23] == 0;
+  }
+}
+
 namespace zeek::analyzer::enip {
   ENIP_TCP_Analyzer::ENIP_TCP_Analyzer(Connection* c): analyzer::tcp::TCP_ApplicationAnalyzer("ENIP_TCP", c)
   {
       interp = new binpac::ENIP::ENIP_Conn(this);
-      had_gap = false;
+      resync_orig = false;
+      resync_resp = false;
   }
 
   ENIP_TCP_Analyzer::~ENIP_TCP_Analyzer()
@@ -46,14 +101,52 @@ namespace zeek::analyzer::enip {
       // the first in a delivery is never seen.
       std::vector<u_char>& buffer = orig ? orig_buffer : resp_buffer;
       buffer.insert(buffer.end(), data, data + len);
+
+      // After a gap the first post-gap byte is a PDU boundary only by luck —
+      // the old code assumed it was one, read bytes 2-3 of whatever landed there as
+      // a length, and then either handed binpac a garbage PDU (an analyzer
+      // violation, and it ate the real PDUs behind it) or wedged until the
+      // 64 KB bound clears the buffer. Skip to a real header instead.
+      bool& resync = orig ? resync_orig : resync_resp;
+      if ( resync )
+      {
+          if ( ! ResyncToHeader(buffer) )
+              return;
+          resync = false;
+      }
+
       ProcessTCPData(buffer, orig);
+  }
+
+  bool ENIP_TCP_Analyzer::ResyncToHeader(std::vector<u_char>& buffer)
+  {
+      if ( buffer.size() >= ENIP_HEADER_LEN )
+      {
+          const size_t last = buffer.size() - ENIP_HEADER_LEN;
+          for ( size_t off = 0; off <= last; ++off )
+          {
+              if ( looks_like_encap_header(buffer.data() + off) )
+              {
+                  buffer.erase(buffer.begin(), buffer.begin() + off);
+                  return true;
+              }
+          }
+      }
+
+      // No candidate yet. Keep only what a header could still straddle, so a
+      // direction that never resynchronises costs 23 bytes, not the rest of
+      // the connection.
+      if ( buffer.size() > ENIP_HEADER_LEN - 1 )
+          buffer.erase(buffer.begin(), buffer.end() - (ENIP_HEADER_LEN - 1));
+      return false;
   }
 
   void ENIP_TCP_Analyzer::ProcessTCPData(std::vector<u_char>& buffer, bool orig)
   {
-      static constexpr size_t ENIP_HEADER_LEN = 24;
-      // Encapsulation length is a uint16, so a PDU is at most 24 + 0xFFFF.
-      static constexpr size_t ENIP_MAX_PDU_LEN = ENIP_HEADER_LEN + 0xFFFF;
+      // ENIP_HEADER_LEN and the PDU bound come from the anonymous namespace
+      // above so the framing constants cannot drift between the parse loop and
+      // the resync scan.
+      constexpr size_t ENIP_MAX_PDU_LEN = ENIP_HEADER_LEN + 0xFFFF;
 
       size_t offset = 0;
       while ( buffer.size() - offset >= ENIP_HEADER_LEN )
@@ -95,11 +188,12 @@ namespace zeek::analyzer::enip {
   void ENIP_TCP_Analyzer::Undelivered(uint64_t seq, int len, bool orig)
   {
       analyzer::tcp::TCP_ApplicationAnalyzer::Undelivered(seq, len, orig);
-      had_gap = true;
       // A TCP gap desynchronizes PDU framing: drop the partial buffer for this
       // direction so we resync on the next complete header rather than treating
-      // post-gap bytes as a continuation of the pre-gap PDU.
+      // post-gap bytes as a continuation of the pre-gap PDU. The peer direction
+      // is untouched and keeps parsing.
       (orig ? orig_buffer : resp_buffer).clear();
+      (orig ? resync_orig : resync_resp) = true;
       interp->NewGap(orig, len);
   }
 

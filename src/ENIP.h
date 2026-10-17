@@ -40,7 +40,12 @@ namespace zeek::analyzer::enip {
 
       protected:
           binpac::ENIP::ENIP_Conn* interp;
-          bool had_gap;
+
+          // Per-direction: true while we are looking for the next encapsulation
+          // header after a content gap. Replaces the write-only
+          // `had_gap`, which nothing read.
+          bool resync_orig;
+          bool resync_resp;
 
           // Reassembly buffers for length-prefixed ENIP-over-TCP framing.
           // Zeek reassembles the TCP stream, but a single encapsulation PDU
@@ -51,6 +56,12 @@ namespace zeek::analyzer::enip {
           std::vector<u_char> resp_buffer;
 
           void ProcessTCPData(std::vector<u_char>& buffer, bool orig);
+
+          // Drop bytes at the front of *buffer* until it starts on something
+          // that can be an encapsulation header. Returns false when no
+          // candidate is present yet (buffer trimmed to what a header could
+          // still straddle).
+          bool ResyncToHeader(std::vector<u_char>& buffer);
   };
 
   class ENIP_UDP_Analyzer : public analyzer::Analyzer
