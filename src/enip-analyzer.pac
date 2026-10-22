@@ -57,6 +57,9 @@
     // Get uint32 number from data in request path
     uint32 get_number(uint8 size, uint16 x, const_bytestring data)
     {
+        uint32 need = (size == 0) ? 1 : (size == 1) ? 2 : 4;
+        if ( size > 2 || (uint32)x + need > (uint32)data.length() )
+            return UINT32_MAX;
         if(size == 0)
             return data[x];
         else if (size == 1)
@@ -81,6 +84,11 @@
             {
                 uint16 choice = (data[x] & 0x1c) >> 2;
                 uint16 size = data[x] & 3;
+                uint32 seg_hdr  = (size > 0) ? 2 : 1;
+                uint32 seg_body = (size == 0) ? 1 : (size == 1) ? 2 : 4;
+                if ( (uint32)x + seg_hdr + seg_body > (uint32)data_length )
+                    return request_path;
+
                 x += 1;
                 if(size > 0)
                     x += 1;
@@ -720,3 +728,4 @@ refine flow ENIP_Flow += {
             return true;
         %}
 };
+
