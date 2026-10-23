@@ -5,6 +5,17 @@
 #include <zeek/Reporter.h>
 #include "events.bif.h"
 
+namespace {
+const char* BinpacExceptionMessage(const binpac::Exception& e)
+{
+#if ZEEK_VERSION_NUMBER >= 90000
+    return e.what();
+#else
+    return e.c_msg();
+#endif
+}
+} // namespace
+
 namespace zeek::analyzer::enip {
   ENIP_TCP_Analyzer::ENIP_TCP_Analyzer(Connection* c): analyzer::tcp::TCP_ApplicationAnalyzer("ENIP_TCP", c)
   {
@@ -72,10 +83,10 @@ namespace zeek::analyzer::enip {
           catch(const binpac::Exception& e)
           {
               #if ZEEK_VERSION_NUMBER < 40200
-              ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+              ProtocolViolation(util::fmt("Binpac exception: %s", BinpacExceptionMessage(e)));
 
               #else
-              AnalyzerViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+              AnalyzerViolation(util::fmt("Binpac exception: %s", BinpacExceptionMessage(e)));
 
               #endif
           }
@@ -129,10 +140,10 @@ namespace zeek::analyzer::enip {
       catch ( const binpac::Exception& e )
       {
           #if ZEEK_VERSION_NUMBER < 40200
-          ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+          ProtocolViolation(util::fmt("Binpac exception: %s", BinpacExceptionMessage(e)));
 
           #else
-          AnalyzerViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+          AnalyzerViolation(util::fmt("Binpac exception: %s", BinpacExceptionMessage(e)));
 
           #endif
       }
