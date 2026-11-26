@@ -230,7 +230,7 @@ refine flow ENIP_Flow += {
                                                    request_path.instance_id,
                                                    request_path.attribute_id,
                                                    1,
-                        zeek::make_intrusive<zeek::StringVal>((${cip_header.request_or_response} == 0 && (${cip_header.service_code} == 0x4d || ${cip_header.service_code} == 0x4e)) ? request_path.symbolic_tag : std::string()));
+                        zeek::make_intrusive<zeek::StringVal>((${cip_header.request_or_response} == 0 && (${cip_header.service_code} == 0x4d || ${cip_header.service_code} == 0x4e || ${cip_header.service_code} == 0x53)) ? request_path.symbolic_tag : std::string()));
             }
             return true;
         %}
@@ -569,7 +569,7 @@ refine flow ENIP_Flow += {
                     else
                         service_list += zeek::util::fmt(",%d", service_code);
 
-                    if ((bytes[service_packet_location] == 0x4d || bytes[service_packet_location] == 0x4e) && path_len && bytes[service_packet_location+2] == 0x91) {
+                    if ((bytes[service_packet_location] == 0x4d || bytes[service_packet_location] == 0x4e || bytes[service_packet_location] == 0x53) && path_len && bytes[service_packet_location+2] == 0x91) {
                         const_bytestring path(bytes.begin()+service_packet_location+2, static_cast<int>(path_len));
                         request_path = parse_request_path(path);
                         if (!request_path.symbolic_tag.empty()) {

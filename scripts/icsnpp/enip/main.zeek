@@ -295,7 +295,7 @@ event cip_header(c: connection,
     }else
     {
         cip_header_item$direction = "request";
-        if ((service == 0x4d || service == 0x4e) && symbolic_tag != "")
+        if ((service == 0x4d || service == 0x4e || service == 0x53) && symbolic_tag != "")
             cip_header_item$cip_symbolic_tag = symbolic_tag;
 
         if(class_id != UINT32_MAX){
