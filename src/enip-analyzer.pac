@@ -10,6 +10,7 @@
 %extern{
     #include <map>
     #include <sstream>
+    #include <string>
     #include <random>
     #include <tuple>
     #include <vector>
@@ -18,6 +19,7 @@
 
     typedef struct CIP_Request_Path {
         uint32 class_id, instance_id, attribute_id;
+        std::string symbolic_tag;
 
         CIP_Request_Path(){
             class_id = UINT32_MAX;
@@ -29,14 +31,9 @@
 
 
     uint32 get_unsigned(const_bytestring data);
-    uint32 get_number(uint8 size, uint32 x, const_bytestring data);
-    CIP_Request_Path parse_request_path_range(const_bytestring data, uint32 start, uint32 end);
+    uint32 get_number(uint8 size, uint8 x, const_bytestring data);
     CIP_Request_Path parse_request_path(const_bytestring data);
-    CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint32 starting_location,
-                                                           uint32 service_end);
-    bool get_service_packet_location(uint16 service_offset, uint16 service_count,
-                                     uint32 services_length, uint32 required_length,
-                                     uint32* location);
+    CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint16 starting_location);
 %}
 
 %code{
@@ -60,12 +57,8 @@
     }
 
     // Get uint32 number from data in request path
-    uint32 get_number(uint8 size, uint32 x, const_bytestring data)
+    uint32 get_number(uint8 size, uint16 x, const_bytestring data)
     {
-        uint32 need = (size == 0) ? 1 : (size == 1) ? 2 : 4;
-        uint32 data_length = data.length();
-        if ( size > 2 || x > data_length || need > data_length - x )
-            return UINT32_MAX;
         if(size == 0)
             return data[x];
         else if (size == 1)
@@ -76,89 +69,101 @@
         return UINT32_MAX;
     }
 
-    // Parse a request path within the bounded [start, end) range.
-    CIP_Request_Path parse_request_path_range(const_bytestring data, uint32 start, uint32 end)
-    {
-        CIP_Request_Path request_path;
-
-        uint32 data_length = data.length();
-        if ( start > end || end > data_length )
-            return request_path;
-
-        uint32 x = start;
-
-        while ( x < end )
-        {
-            uint32 remaining = end - x;
-            if ( remaining < 2 || (data[x] >> 5) != 1 )
-                return request_path;
-
-            uint16 choice = (data[x] & 0x1c) >> 2;
-            uint16 size = data[x] & 3;
-            if ( size > 2 )
-                return request_path;
-
-            uint32 segment_header = (size > 0) ? 2 : 1;
-            uint32 segment_body = (size == 0) ? 1 : (size == 1) ? 2 : 4;
-            if ( segment_header + segment_body > remaining )
-                return request_path;
-
-            x += segment_header;
-            uint32 number = get_number(size, x, data);
-
-            if(choice == 0)
-                request_path.class_id = number;
-            else if(choice == 1)
-                request_path.instance_id = number;
-            else if(choice == 4)
-                request_path.attribute_id = number;
-
-            x += segment_body;
-        }
-
-        return request_path;
-    }
-
     // Parse request path and return CIP_Request_Path struct
     CIP_Request_Path parse_request_path(const_bytestring data)
     {
-        return parse_request_path_range(data, 0, data.length());
+        CIP_Request_Path request_path;
+
+        if (data.length() > 0 && data[0] == 0x91) {
+            if (data.length() < 2) return request_path;
+            const unsigned n = static_cast<uint8>(data[1]);
+            const unsigned pad = n % 2;
+            if (!n || data.length() != static_cast<int>(2+n+pad)) return request_path;
+            if (pad && data[2+n] != 0) return request_path;
+            std::string name;
+            for (unsigned i=0; i<n; ++i) {
+                const auto c=data[2+i];
+                if (!((c>=65 && c<=90)||(c>=97 && c<=122)||c==95||(i && c>=48 && c<=57))) return request_path;
+                name.push_back(static_cast<char>(c));
+            }
+            request_path.symbolic_tag.swap(name);
+            return request_path;
+        }
+        uint16 x = 0;
+        uint16 data_length = data.length();
+
+        while( (x+1) < data_length )
+        {
+            if ((data[x] >> 5) == 1)
+            {
+                uint16 choice = (data[x] & 0x1c) >> 2;
+                uint16 size = data[x] & 3;
+                x += 1;
+                if(size > 0)
+                    x += 1;
+
+                if(choice == 0)
+                    request_path.class_id = get_number(size, x, data);
+                else if(choice == 1)
+                    request_path.instance_id = get_number(size, x, data);
+                else if(choice == 4)
+                    request_path.attribute_id = get_number(size, x, data);
+
+                if(size == 0)
+                    x += 1;
+                else if(size == 1)
+                    x += 2;
+                else
+                    x += 4;
+            }
+            else
+            {
+                return request_path;
+            }
+        }
+        return request_path;
     }
 
     // Parse request path from multiple service packet and return CIP_Request_Path struct
-    CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint32 starting_location,
-                                                           uint32 service_end)
+    CIP_Request_Path parse_request_multiple_service_packet(const_bytestring data, uint16 starting_location)
     {
         CIP_Request_Path request_path;
-        uint32 data_length = data.length();
 
-        // The nested request-path length byte must be present in this service.
-        if ( service_end > data_length || starting_location >= service_end )
-            return request_path;
+        uint16 x = starting_location;
+        uint16 data_length = starting_location + (data[x] * 2) + 1;
+        x += 1;
 
-        uint32 path_start = starting_location + 1;
-        uint32 path_length = (uint32)data[starting_location] * 2;
-        if ( path_length > service_end - path_start )
-            return request_path;
+        while( (x + 1) < data_length )
+        {
+            if ((data[x] >> 5) == 1)
+            {
+                uint16 choice = (data[x] & 0x1c) >> 2;
+                uint16 size = data[x] & 3;
+                x += 1;
+                if(size > 0)
+                    x += 1;
 
-        return parse_request_path_range(data, path_start, path_start + path_length);
-    }
+                if(choice == 0)
+                    request_path.class_id = get_number(size, x, data);
+                else if(choice == 1)
+                    request_path.instance_id = get_number(size, x, data);
+                else if(choice == 4)
+                    request_path.attribute_id = get_number(size, x, data);
 
-    // Translate a Multiple Service Packet offset into the services bytestring.
-    bool get_service_packet_location(uint16 service_offset, uint16 service_count,
-                                     uint32 services_length, uint32 required_length,
-                                     uint32* location)
-    {
-        uint32 service_table_length = 2 + ((uint32)service_count * 2);
-        if ( (uint32)service_offset < service_table_length )
-            return false;
+                if(size == 0)
+                    x += 1;
+                else if(size == 1)
+                    x += 2;
+                else
+                    x += 4;
+            }
+            else
+            {
+                return request_path;
+            }
 
-        uint32 candidate = (uint32)service_offset - service_table_length;
-        if ( candidate > services_length || required_length > services_length - candidate )
-            return false;
-
-        *location = candidate;
-        return true;
+        }
+        return request_path;
     }
 
 %}
@@ -224,7 +229,8 @@ refine flow ENIP_Flow += {
                                                    request_path.class_id,
                                                    request_path.instance_id,
                                                    request_path.attribute_id,
-                                                   1);
+                                                   1,
+                        zeek::make_intrusive<zeek::StringVal>((${cip_header.request_or_response} == 0 && (${cip_header.service_code} == 0x4d || ${cip_header.service_code} == 0x4e || ${cip_header.service_code} == 0x53)) ? request_path.symbolic_tag : std::string()));
             }
             return true;
         %}
@@ -511,11 +517,10 @@ refine flow ENIP_Flow += {
         %{
             if ( ::cip_header )
             {
-                uint32 service_packet_location;
+                size_t service_packet_location;
 
-                uint16 service_count = ${data.service_count};
+                const size_t service_count = ${data.service_count};
                 uint16 cip_sequence_count = ${data.cip_sequence_count};
-                const_bytestring services = ${data.services};
                 CIP_Request_Path request_path = parse_request_path(${data.request_path.request_path});
 
                 struct Aggregated_Request {
@@ -541,31 +546,22 @@ refine flow ENIP_Flow += {
                                                    request_path.class_id,
                                                    request_path.instance_id,
                                                    request_path.attribute_id,
-                                                   1);
+                                                   1,
+                        zeek::make_intrusive<zeek::StringVal>(std::string()));
 
                 // Build comma-separated list of service codes and generate CIP Header events for each
                 string service_list = "";
-                for(uint16 i=0; i < service_count;i++)
+                const size_t base = 2 + 2 * service_count;
+                const auto& bytes = ${data.services};
+                for(size_t i=0; i < service_count; ++i)
                 {
-                    if ( ! get_service_packet_location(${data.service_offsets[i]}, service_count,
-                                                       services.length(), 1,
-                                                       &service_packet_location) )
-                        break;
-
-                    uint32 service_end = services.length();
-                    if ( i + 1 < service_count )
-                    {
-                        uint32 next_service_location;
-                        if ( ! get_service_packet_location(${data.service_offsets[i + 1]}, service_count,
-                                                           services.length(), 0,
-                                                           &next_service_location) ||
-                             next_service_location <= service_packet_location )
-                            break;
-
-                        service_end = next_service_location;
-                    }
-
-                    uint8 service_code = services[service_packet_location] & 0x7f;
+                    const size_t start = ${data.service_offsets[i]};
+                    const size_t end = i+1 < service_count ? ${data.service_offsets[i+1]} : base + bytes.length();
+                    if (start < base || end < start + 2 || end > base + bytes.length()) return true;
+                    service_packet_location = start - base;
+                    const size_t path_len = 2u * bytes[service_packet_location+1];
+                    if (path_len > end-start-2) return true;
+                    uint8 service_code = ${data.services[service_packet_location]} & 0x7f;
 
                     // append to list
                     if(i == 0)
@@ -573,9 +569,16 @@ refine flow ENIP_Flow += {
                     else
                         service_list += zeek::util::fmt(",%d", service_code);
 
-                    request_path = parse_request_multiple_service_packet(services,
-                                                                         service_packet_location + 1,
-                                                                         service_end);
+                    if ((bytes[service_packet_location] == 0x4d || bytes[service_packet_location] == 0x4e || bytes[service_packet_location] == 0x53) && path_len && bytes[service_packet_location+2] == 0x91) {
+                        const_bytestring path(bytes.begin()+service_packet_location+2, static_cast<int>(path_len));
+                        request_path = parse_request_path(path);
+                        if (!request_path.symbolic_tag.empty()) {
+                            unique_requests.push_back({service_code, request_path, 1});
+                            continue;
+                        }
+                    } else {
+                        request_path = parse_request_multiple_service_packet(${data.services},service_packet_location+1);
+                    }
                     Request_Key key = std::make_tuple(service_code,
                                                       request_path.class_id,
                                                       request_path.instance_id,
@@ -608,7 +611,8 @@ refine flow ENIP_Flow += {
                                                        it->request_path.class_id,
                                                        it->request_path.instance_id,
                                                        it->request_path.attribute_id,
-                                                       it->occurrence_count);
+                                                       it->occurrence_count,
+                        zeek::make_intrusive<zeek::StringVal>(it->request_path.symbolic_tag));
                 }
 
                 // Emit multiple_service_request event itself
@@ -633,11 +637,10 @@ refine flow ENIP_Flow += {
             if ( ::cip_header )
             {
                 CIP_Request_Path request_path;
-                uint32 service_packet_location;
+                uint16 service_packet_location;
                 
-                uint16 service_count = ${data.service_count};
+                uint8 service_count = ${data.service_count};
                 uint16 cip_sequence_count = ${data.cip_sequence_count};
-                const_bytestring services = ${data.services};
 
                 struct Aggregated_Response {
                     uint8 service_code;
@@ -662,18 +665,15 @@ refine flow ENIP_Flow += {
                                                    request_path.class_id,
                                                    request_path.instance_id,
                                                    request_path.attribute_id,
-                                                   1);
+                                                   1,
+                        zeek::make_intrusive<zeek::StringVal>(std::string()));
 
                 // Build comma-separated list of service codes and generate CIP Header events for each
                 string service_list = "";
-                for(uint16 i=0; i < service_count;i++)
+                for(uint8 i=0; i < service_count;i++)
                 {
-                    if ( ! get_service_packet_location(${data.service_offsets[i]}, service_count,
-                                                       services.length(), 3,
-                                                       &service_packet_location) )
-                        break;
-
-                    uint8 service_code = services[service_packet_location] & 0x7f;
+                    service_packet_location = ${data.service_offsets[i]} - (2*service_count) - 2;
+                    uint8 service_code = ${data.services[service_packet_location]} & 0x7f;
 
                     // append to list
                     if(i == 0)
@@ -681,7 +681,7 @@ refine flow ENIP_Flow += {
                     else
                         service_list += zeek::util::fmt(",%d", service_code);
 
-                    uint8 status = services[service_packet_location + 2];
+                    uint8 status = ${data.services[service_packet_location + 2]};
                     Response_Key key = std::make_tuple(service_code, status);
                     std::map<Response_Key, size_t>::iterator existing = seen_responses.find(key);
 
@@ -711,7 +711,8 @@ refine flow ENIP_Flow += {
                                                        request_path.class_id,
                                                        request_path.instance_id,
                                                        request_path.attribute_id,
-                                                       it->occurrence_count);
+                                                       it->occurrence_count,
+                        zeek::make_intrusive<zeek::StringVal>(std::string()));
                 }
 
                 // Emit multiple_service_response event itself
