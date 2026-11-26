@@ -66,6 +66,7 @@ export{
         class_name                  : string    &log;   ##<CIP Request Path - Class Name (see cip_classes)
         instance_id                 : string    &log;   ##<CIP Request Path - Instance ID
         attribute_id                : string    &log;   ##<CIP Request Path - Attribute ID
+        cip_symbolic_tag            : string &log &optional;
         occurrence_count            : count     &log;   ##<Number of identical CIP records in this packet
     };
     global log_cip: event(rec: CIP_Header);
@@ -171,8 +172,8 @@ event zeek_init() &priority=5 {
                                                 $path="cip_identity",
                                                 $policy=log_policy_cip_identity]);
 
-    Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
-    Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
+    #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_TCP, tcp_ports);
+    #Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_ports);
     # Monitor only the UDP Port assigned to implicit ENIP/CIP IO Messages
     Analyzer::register_for_ports(Analyzer::ANALYZER_ENIP_UDP, udp_implicit_ports);
 }
@@ -245,7 +246,7 @@ event cip_header(c: connection,
                  class_id: count,
                  instance_id: count,
                  attribute_id: count,
-                 occurrence_count: count){
+                 occurrence_count: count, symbolic_tag: string){
 
     set_service(c, "cip");
     local cip_header_item: CIP_Header;
@@ -294,6 +295,8 @@ event cip_header(c: connection,
     }else
     {
         cip_header_item$direction = "request";
+        if ((service == 0x4d || service == 0x4e) && symbolic_tag != "")
+            cip_header_item$cip_symbolic_tag = symbolic_tag;
 
         if(class_id != UINT32_MAX){
             cip_header_item$class_id = fmt("0x%02x",class_id);

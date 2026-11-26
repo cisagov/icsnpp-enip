@@ -63,7 +63,7 @@ event cip_header%(c: connection,
                   class_id: count,
                   instance_id: count,
                   attribute_id: count,
-                  occurrence_count: count%);
+                  occurrence_count: count, symbolic_tag: string%);
 
 ## ------------------------------------------cip-identity------------------------------------------
 ## Event Description:
